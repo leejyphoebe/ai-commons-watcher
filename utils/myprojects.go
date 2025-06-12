@@ -14,6 +14,7 @@ import (
 type Project struct {
 	Name          string
 	Username      string
+	LastUpdated   time.Time
 	CreditSummary CreditSummary
 	Usage         []CreditUsageByType
 }
@@ -35,6 +36,7 @@ type CreditUsageByType struct {
 
 type MyProjectsOutput struct {
 	Timestamp   time.Time // This should be set based on the current date and time
+	LastUpdated time.Time
 	Username    string
 	ProjectName string
 	Grant       float64
@@ -67,8 +69,8 @@ func GetDailyReportForUser(ctx context.Context, conn *ssh.Client) ([]Project, er
 		return nil, fmt.Errorf("credit check command returned empty output")
 	}
 	lines := strings.Split(stdout, "\n")
-	lines = append(lines, "---END---\n")
-	projects, err := ParseMyProjects(ctx, conn.User(), lines)
+	lines = append(lines, "---END---\n") // hax to mark the end of the output
+	projects, err := ParseMyProjectsStdout(ctx, conn.User(), lines)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse myprojects output: %v", err)
 	}
@@ -115,7 +117,7 @@ func splitTableLine(line string) []string {
 	return fields
 }
 
-func ParseMyProjects(ctx context.Context, username string, lines []string) ([]Project, error) {
+func ParseMyProjectsStdout(ctx context.Context, username string, lines []string) ([]Project, error) {
 	logger, err := GetLoggerFromContext(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve logger from context: %v", err)
@@ -145,6 +147,28 @@ func ParseMyProjects(ctx context.Context, username string, lines []string) ([]Pr
 				Username: username,
 			}
 			currentSection = ""
+			continue
+		}
+
+		if strings.Contains(line, "balance as of") {
+			if currentProject == nil {
+				return nil, fmt.Errorf("found balance line without a project")
+			}
+			// Extract the last updated time from the line
+			parts := strings.Split(line, "balance as of")
+			if len(parts) < 2 {
+				return nil, fmt.Errorf("invalid balance line: %s, expected format 'Project <name> balance as of <date>'", line)
+			}
+			dateStr := strings.TrimSpace(parts[1])
+			// format: 12/06/2025-10:39:23
+			currentProject.LastUpdated, err = time.Parse("01/02/2006-15:04:05", dateStr)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse date from balance line: %s, error: %v", dateStr, err)
+			}
+			logger.Debugf("Parsed project %s last updated time: %s", currentProject.Name, currentProject.LastUpdated)
+			if currentProject.LastUpdated.IsZero() {
+				return nil, fmt.Errorf("project %s has an invalid last updated time", currentProject.Name)
+			}
 			continue
 		}
 
@@ -236,6 +260,8 @@ func CreateMyProjectOutput(ctx context.Context, project Project) (MyProjectsOutp
 		Used:        project.CreditSummary.Used,
 		Balance:     project.CreditSummary.Balance,
 		InDoubt:     project.CreditSummary.InDoubt,
+		LastUpdated: project.LastUpdated,
+		Timestamp:   time.Now(), // Set the current timestamp
 	}
 
 	for _, usage := range project.Usage {
@@ -266,7 +292,7 @@ func AppendMyProjectsToFile(ctx context.Context, projects []Project, filePath st
 	}
 
 	if !isFileExists {
-		sb.WriteString("timestamp,username,projectname,grant,used,balance,indoubt,gpu_hour,cpu_hour\n")
+		sb.WriteString("timestamp,last_updated,username,projectname,grant,used,balance,indoubt,gpu_hour,cpu_hour\n")
 	} else {
 		// If the file exists, we assume it already has the header
 		logger.Infof("File %s already exists, appending data", filePath)
@@ -277,8 +303,9 @@ func AppendMyProjectsToFile(ctx context.Context, projects []Project, filePath st
 		if err != nil {
 			return fmt.Errorf("failed to create MyProjectsOutput for project %s: %v", project.Name, err)
 		}
-		sb.WriteString(fmt.Sprintf("%s,%s,%s,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f",
-			time.Now().Format(timeFormat),
+		sb.WriteString(fmt.Sprintf("%s,%s,%s,%s,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f",
+			output.Timestamp.Format(timeFormat),
+			output.LastUpdated.Format(timeFormat),
 			output.Username,
 			output.ProjectName,
 			output.Grant,
@@ -316,21 +343,27 @@ func ParseMyProjectsCsv(ctx context.Context, line string) (MyProjectsOutput, err
 		return MyProjectsOutput{}, fmt.Errorf("invalid timestamp in line: %s", line)
 	}
 
+	lastUpdated, err := time.Parse(timeFormat, fields[1])
+	if err != nil {
+		return MyProjectsOutput{}, fmt.Errorf("invalid last updated time in line: %s", line)
+	}
+
 	values := make([]float64, 6)
 	for i := range fields {
-		if i < 3 {
+		if i < 4 {
 			continue
 		}
 		fields[i] = strings.TrimSpace(fields[i])
 		if i > 0 {
-			values[i-3], _ = strconv.ParseFloat(fields[i], 64)
+			values[i-4], _ = strconv.ParseFloat(fields[i], 64)
 		}
 	}
 
 	output := MyProjectsOutput{
 		Timestamp:   timestamp,
-		Username:    fields[1],
-		ProjectName: fields[2],
+		LastUpdated: lastUpdated,
+		Username:    fields[2],
+		ProjectName: fields[3],
 		Grant:       values[0],
 		Used:        values[1],
 		Balance:     values[2],
@@ -443,7 +476,7 @@ func GetDailyReportString(ctx context.Context, title string, newFilePath, prevFi
 	}
 
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("*%s*\n", title))
+	sb.WriteString(fmt.Sprintf("*%s*\n", strings.TrimSpace(title)))
 	sb.WriteString(fmt.Sprintf("Datetime: %s\n", time.Now().Format(timeFormat)))
 	i := 1
 	prevTimestamp := time.Time{}
@@ -462,7 +495,7 @@ func GetDailyReportString(ctx context.Context, title string, newFilePath, prevFi
 
 		usedChange := newOutput.Used - prevOutput.Used
 		gpuHourChange := newOutput.GPUHour - prevOutput.GPUHour
-		sb.WriteString(fmt.Sprintf("%d. *%s* (%s)\n", i, newOutput.ProjectName, newOutput.Username))
+		sb.WriteString(fmt.Sprintf("%d. *%s* (%s) as of %s\n", i, newOutput.ProjectName, newOutput.Username, newOutput.LastUpdated.Format(timeFormat)))
 		sb.WriteString(fmt.Sprintf("    🪙 Balance: %.3f\n", newOutput.Balance))
 		sb.WriteString(fmt.Sprintf("    ➗ Used: %.3f/%.3f", newOutput.Used, newOutput.Grant))
 		if usedChange != 0 {
