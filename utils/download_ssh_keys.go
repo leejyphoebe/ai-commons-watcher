@@ -1,70 +1,16 @@
 package utils
 
 import (
+	"ai-commons/config"
 	"bufio"
 	"context"
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 
 	"github.com/bitwarden/sdk-go"
 )
-
-func CreateDirFileIfNotExists(path string) error {
-	// Check if the directory exists
-	if _, err := os.Stat(filepath.Dir(path)); os.IsNotExist(err) {
-		// Create the directory if it does not exist
-		err = os.MkdirAll(filepath.Dir(path), 0755) // Ensure the directory is created with appropriate permissions
-		if err != nil {
-			return fmt.Errorf("failed to create directory %s: %v", path, err)
-		}
-	}
-
-	// Create a file in the directory if it does not exist
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		file, err := os.Create(path)
-		if err != nil {
-			return fmt.Errorf("failed to create file %s: %v", path, err)
-		}
-		defer file.Close()
-	}
-
-	return nil
-}
-
-func AppendToFile(ctx context.Context, filePath, content string) error {
-	logger, err := GetLoggerFromContext(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to retrieve logger from context: %v", err)
-	}
-
-	// Ensure the file exists
-	if err := CreateDirFileIfNotExists(filePath); err != nil {
-		return fmt.Errorf("failed to create file %s: %v", filePath, err)
-	}
-
-	// Open the file for appending
-	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_WRONLY, 0644)
-	if err != nil {
-		return fmt.Errorf("failed to open file %s for appending: %v", filePath, err)
-	}
-	defer file.Close()
-
-	// Write the content to the file
-	if _, err := file.WriteString(content + "\n"); err != nil {
-		return fmt.Errorf("failed to write to file %s: %v", filePath, err)
-	}
-
-	// Ensure the file is closed properly
-	if err := file.Sync(); err != nil {
-		return fmt.Errorf("failed to sync file %s: %v", filePath, err)
-	}
-
-	logger.Infof("Appended content to file %s\n", filePath)
-	return nil
-}
 
 func GetBitwardenClient(accessToken, apiUrl, identityUrl string) (*sdk.BitwardenClientInterface, error) {
 	if apiUrl == "" {
@@ -82,11 +28,11 @@ func GetBitwardenClient(accessToken, apiUrl, identityUrl string) (*sdk.Bitwarden
 	}
 
 	// Login to Bitwarden
-	stateFile := ".cache/state"
+	stateFile := config.GetConfig().Bitwarden.StateFile
 	// Attempt to login using the access token
 	err = bitwardenClient.AccessTokenLogin(accessToken, &stateFile)
 	if err != nil {
-		return nil, fmt.Errorf("failed to login to Bitwarden with access token: %v", err)	
+		return nil, fmt.Errorf("failed to login to Bitwarden with access token: %v", err)
 	}
 
 	return &bitwardenClient, nil
@@ -218,26 +164,6 @@ func GetSSHKey(client *sdk.BitwardenClientInterface, secretId string) (string, e
 	return secret.Value, nil
 }
 
-func CheckIfDirExists(path string) (bool, error) {
-	info, err := os.Stat(path)
-
-	if os.IsNotExist(err) {
-		// The path does not exist
-		return false, nil
-	}
-	if err != nil {
-		// Some other error occurred (e.g., permissions, invalid path)
-		return false, fmt.Errorf("error checking path %s: %v", path, err)
-	}
-
-	// The path exists, now check if it's a directory
-	if !info.IsDir() {
-		return false, fmt.Errorf("path %s exists but is not a directory", path)
-	}
-
-	return true, nil // It exists and is a directory
-}
-
 func CheckIfSSHKeyExists(saveDir, keyPrefix, key string) (bool, error) {
 	// Construct the file path for the SSH key
 	filePath := fmt.Sprintf("%s/%s%s", saveDir, keyPrefix, key[8:]) // Remove "ssh_key_" prefix
@@ -285,7 +211,7 @@ func DownloadSSHKey(ctx context.Context, client *sdk.BitwardenClientInterface, k
 		return "", fmt.Errorf("error checking if SSH key %s exists: %v", keyName, err)
 	}
 	if exists {
-		logger.Debugf("SSH key %s already exists in %s, skipping download\n", keyName, filePath) 
+		logger.Debugf("SSH key %s already exists in %s, skipping download\n", keyName, filePath)
 		return filePath, nil // Skip download if the key already exists
 	}
 
@@ -320,7 +246,7 @@ func DownloadSSHKeys(ctx context.Context, client *sdk.BitwardenClientInterface, 
 	if orgId == "" {
 		return nil, fmt.Errorf("organization ID is empty")
 	}
-	
+
 	// Check if save directory exists, if not return an error
 	exists, err := CheckIfDirExists(saveDir)
 	if err != nil {
@@ -348,7 +274,6 @@ func DownloadSSHKeys(ctx context.Context, client *sdk.BitwardenClientInterface, 
 		return nil, fmt.Errorf("no SSH keys found in organization %s", orgId)
 	}
 
-
 	// Download each SSH key and save it to the specified directory
 	sshKeysMap := make(map[string]string)
 	for key, id := range sshKeys {
@@ -367,11 +292,10 @@ func AppendKnownHosts(ctx context.Context, hostname, knownHostsPath string) erro
 	if err != nil {
 		return fmt.Errorf("failed to retrieve logger from context: %v", err)
 	}
-	
+
 	// check in cache to see if known_hosts has been appended to before
-	knownHostsCachePath := fmt.Sprintf("%s/known_hosts", CacheDir)
-	if _, err := os.Stat(knownHostsCachePath); err == nil {
-		logger.Infof("known_hosts cache %s already exists, skipping append", knownHostsCachePath)
+	if _, err := os.Stat(knownHostsPath); err == nil {
+		logger.Infof("known_hosts cache %s already exists, skipping append", knownHostsPath)
 		return nil
 	}
 
@@ -380,14 +304,9 @@ func AppendKnownHosts(ctx context.Context, hostname, knownHostsPath string) erro
 		return fmt.Errorf("failed to run ssh-keyscan for %s: %v", hostname, err)
 	}
 
-	err = AppendToFile(ctx, knownHostsPath, string(res))
+	err = AppendToFile(ctx, knownHostsPath, string(res), 0644)
 	if err != nil {
 		return fmt.Errorf("failed to append to known_hosts file %s: %v", knownHostsPath, err)
-	}
-	// Create a cache file to indicate that known_hosts has been appended
-	err = AppendToFile(ctx, knownHostsCachePath, string(res))
-	if err != nil {
-		return fmt.Errorf("failed to append to known_hosts cache file %s: %v", knownHostsCachePath, err)
 	}
 
 	logger.Infof("Appended %s to known_hosts file %s\n", hostname, knownHostsPath)
@@ -409,7 +328,7 @@ func AppendSSHConfig(ctx context.Context, configFilePath, hostname, user, identi
 
 	// Write the SSH configuration
 	configContent := fmt.Sprintf("Host %s\n\tHostName %s\n\tUser %s\n\tIdentityFile %s\n", user, hostname, user, identityFile)
-	if err := AppendToFile(ctx, configFilePath, configContent); err != nil {
+	if err := AppendToFile(ctx, configFilePath, configContent, 0644); err != nil {
 		return fmt.Errorf("failed to append SSH config for alias %s: %v", user, err)
 	}
 

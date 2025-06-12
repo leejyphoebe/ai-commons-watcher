@@ -1,0 +1,47 @@
+cache_dir: "$PWD/.cache"
+nscc_usage_cache_file_path: "$PWD/.cache/nscc_usage.csv"
+logging:
+  file: ""
+  level: INFO
+  json: false
+  stdout: true
+ssh:
+  hostname: "aspire2antu.nscc.sg"
+  master_host: "colinhon"
+  config_path: "$PWD/.cache/ssh_config"
+  keys_path: "$HOME/.ssh"
+  known_hosts_path: "$PWD/.cache/known_hosts"
+bitwarden:
+  api_url: "https://api.bitwarden.eu"
+  identity_url: "https://identity.bitwarden.eu"
+  state_file: "$PWD/.cache/state"
+jobs:
+  - name: "vllm_server"
+    image: "vllm_nscc.sif"
+    num_nodes: 2
+    nodes: ["silv0011", "collinhon"]
+    command: "echo 'Hello world from server!'"
+  - name: "vllm_client"
+    project_repo: "github.com/googlercolin/slimsc"
+    node_mode: "inherit"
+    command: "echo 'Hello world from client!'"
+nscc:
+  copy_dir: "/scratch/users/ntu/$USER"
+  sif_images_dir: "/scratch/users/ntu/$USER/sif_images"
+  result_dir: "/scratch/users/ntu/$USER/results"
+  model:
+    dir: "/scratch/users/ntu/$USER/models"
+    name: "R1-Distill-Qwen-14B"
+    source: "hf"
+  required_modules:
+    - "python/3.10.9"
+    - "git"
+    - "singularity"
+  setup_steps:
+    - "rm /scratch/users/ntu/$USER/sif_images/save_model.sif"
+    - "singularity pull /scratch/users/ntu/$USER/sif_images/vllm_nscc.sif docker://broccolin/vllm-nscc:latest"
+  envs:
+    - key: "SINGULARITY_CACHEDIR"
+      value: "/scratch/users/ntu/$USER/.singularity"
+    - key: "HF_HUB_ENABLE_HF_TRANSFER"
+      value: "1"

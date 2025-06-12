@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"ai-commons/config"
 	"context"
 	"fmt"
 	"io"
@@ -28,13 +29,14 @@ func GetLoggerFromContext(ctx context.Context) (*log.Entry, error) {
 // InitLogger initializes the global logger instance for the utils package.
 // It sets up output, level, and formatter based on provided parameters.
 // This function should ideally be called once at application startup.
-func InitLogger(logFilePath string, level log.Level, isJSON bool, logToStdout bool) error {
+func InitLogger() error {
 	logger = log.New() // Initialize the logger instance
 
 	// set multiple writers for logging output
 	var writers []io.Writer
 
 	// Set output: Try to open file, fallback to stdout
+	logFilePath := config.GetConfig().Logging.File
 	if logFilePath != "" {
 		file, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 		if err == nil {
@@ -46,6 +48,7 @@ func InitLogger(logFilePath string, level log.Level, isJSON bool, logToStdout bo
 		}
 	} 
 
+	logToStdout := config.GetConfig().Logging.Stdout
 	if logToStdout || len(writers) == 0 {
 		// If logToStdout is true or no file writer was added, log to stdout
 		writers = append(writers, os.Stdout)
@@ -59,6 +62,20 @@ func InitLogger(logFilePath string, level log.Level, isJSON bool, logToStdout bo
 	// Create a MultiWriter to write to all configured destinations
 	mw := io.MultiWriter(writers...)
 	logger.SetOutput(mw)
+
+	// Set the log level
+	levelStr := config.GetConfig().Logging.Level
+	level, err := log.ParseLevel(levelStr)
+	if err != nil {
+		return fmt.Errorf("invalid log level '%s': %w", levelStr, err)
+	}
+
+	isJSON := config.GetConfig().Logging.Json
+	if isJSON {
+		fmt.Println("Logging in JSON format.")
+	} else {
+		fmt.Println("Logging in text format.")
+	}
 
 	// Set the log level
 	logger.SetLevel(level)

@@ -1,10 +1,10 @@
 package utils
 
 import (
+	"ai-commons/config"
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
 )
 
 func CheckFirstRun() bool {
@@ -33,8 +33,8 @@ func InitSSHKeys(ctx context.Context, hostname string, appendKnownHosts, appendS
 	// Initialize Bitwarden client
 	bwClient, err := GetBitwardenClient(
 		accessToken,
-		Getenv("BITWARDEN_API_URL", "https://api.bitwarden.eu"),
-		Getenv("BITWARDEN_IDENTITY_URL", "https://identity.bitwarden.eu"),
+		config.GetConfig().Bitwarden.ApiUrl,
+		config.GetConfig().Bitwarden.IdentityUrl,
 	)
 	if err != nil {
 		logger.Error("Failed to initialize Bitwarden client: ", err)
@@ -44,13 +44,7 @@ func InitSSHKeys(ctx context.Context, hostname string, appendKnownHosts, appendS
 	defer CloseBitwardenClient(bwClient)
 
 	// Download SSH keys from Bitwarden
-	homedir, err := os.UserHomeDir()
-    if err != nil {
-		logger.Error("Failed to get user home directory: ", err)
-		return nil, fmt.Errorf("failed to get user home directory: %v", err)
-    }
-
-	sshDir := Getenv("SSH_DIR", filepath.Join(homedir, ".ssh"))
+	sshDir := config.GetConfig().SSH.KeysPath
 	sshKeys, err := DownloadSSHKeys(ctx, bwClient, orgId, sshDir, true, ".cache", "nscc_")
 	if err != nil {
 		logger.Error("Failed to download SSH keys from Bitwarden: ", err)
@@ -63,7 +57,7 @@ func InitSSHKeys(ctx context.Context, hostname string, appendKnownHosts, appendS
 
 	if appendKnownHosts {
 		// append known hosts
-		err = AppendKnownHosts(ctx, hostname, SSHKnownHostsPath)
+		err = AppendKnownHosts(ctx, hostname, config.GetConfig().SSH.KnownHostsPath)
 		if err != nil {
 			logger.Error("Failed to append known hosts: ", err)
 			return nil, fmt.Errorf("failed to append known hosts: %v", err)
@@ -71,31 +65,31 @@ func InitSSHKeys(ctx context.Context, hostname string, appendKnownHosts, appendS
 	}
 
 	if appendSSHConfig {
-		sshConfigFile := Getenv("SSH_CONFIG_PATH", SSHConfigPath)
+		sshConfigPath := config.GetConfig().SSH.ConfigPath
 
 		// check if ssh config file exists, if yes, skip
-		if _, err := os.Stat(sshConfigFile); err == nil {
-			logger.Infof("SSH config file %s already exists, skipping creation", sshConfigFile)
+		if _, err := os.Stat(sshConfigPath); err == nil {
+			logger.Infof("SSH config file %s already exists, skipping creation", sshConfigPath)
 			return sshKeys, nil
 		} else if !os.IsNotExist(err) {
 			logger.Error("Failed to check SSH config file: ", err)
 			return nil, fmt.Errorf("failed to check SSH config file: %v", err)
 		}
 
-		if err := CreateDirFileIfNotExists(SSHConfigPath); err != nil {
+		if err := CreateDirFileIfNotExists(sshConfigPath); err != nil {
 			logger.Error("Failed to create SSH config directory: ", err)
 			return nil, fmt.Errorf("failed to create SSH config directory: %v", err)
 		}
 
-		logger.Infof("Successfully created SSH config file %s", sshConfigFile)
+		logger.Infof("Successfully created SSH config file %s", sshConfigPath)
 		// append SSH keys to the SSH config file
 		for key, path := range sshKeys {
-			err = AppendSSHConfig(ctx, sshConfigFile, hostname, key, path)
+			err = AppendSSHConfig(ctx, sshConfigPath, hostname, key, path)
 			if err != nil {
 				logger.Error("Failed to append SSH config: ", err)
 				return nil, fmt.Errorf("failed to append SSH config: %v", err)
 			}
-			logger.Infof("Successfully appended SSH config to %s", sshConfigFile)
+			logger.Infof("Successfully appended SSH config to %s", sshConfigPath)
 		}
 	}
 
