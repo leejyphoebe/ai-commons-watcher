@@ -161,7 +161,7 @@ func ParseMyProjectsStdout(ctx context.Context, username string, lines []string)
 			}
 			dateStr := strings.TrimSpace(parts[1])
 			// format: 12/06/2025-10:39:23
-			currentProject.LastUpdated, err = time.Parse("01/02/2006-15:04:05", dateStr)
+			currentProject.LastUpdated, err = time.Parse("02/01/2006-15:04:05", dateStr)
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse date from balance line: %s, error: %v", dateStr, err)
 			}
@@ -496,7 +496,7 @@ func GetDailyReportString(ctx context.Context, title string, newFilePath, prevFi
 		usedChange := newOutput.Used - prevOutput.Used
 		gpuHourChange := newOutput.GPUHour - prevOutput.GPUHour
 		sb.WriteString(fmt.Sprintf("%d. *%s* (%s) as of %s\n", i, newOutput.ProjectName, newOutput.Username, newOutput.LastUpdated.Format(timeFormat)))
-		sb.WriteString(fmt.Sprintf("    🪙 Balance: %.3f\n", newOutput.Balance))
+		sb.WriteString(fmt.Sprintf("    🪙 Balance: %.3f (%.3f%% Remaining)\n", newOutput.Balance, 100*(newOutput.Balance/newOutput.Grant)))
 		sb.WriteString(fmt.Sprintf("    ➗ Used: %.3f/%.3f", newOutput.Used, newOutput.Grant))
 		if usedChange != 0 {
 			if usedChange > 0 {
