@@ -453,7 +453,7 @@ func ReadOutputFileMap(ctx context.Context, filePath string) (map[string]MyProje
 //     Used: <used>/<grant> (+/- <yesterday's_used>)
 //     Balance: <balance>
 //     ...
-func GetDailyReportString(ctx context.Context, title string, newFilePath, prevFilePath string) (string, error) {
+func GetDailyReportString(ctx context.Context, title string, newFilePath, prevFilePath string, failedHosts []string) (string, error) {
 	logger, err := GetLoggerFromContext(ctx)
 	if err != nil {
 		return "", fmt.Errorf("failed to retrieve logger from context: %v", err)
@@ -529,6 +529,14 @@ func GetDailyReportString(ctx context.Context, title string, newFilePath, prevFi
 	}
 	if len(sb.String()) == 0 {
 		sb.WriteString("No data available for the daily report.\n")
+	}
+	if len(failedHosts) > 0 {
+		sb.WriteString("Failed to connect to the following accounts:\n")
+		for _, host := range failedHosts {
+			sb.WriteString(fmt.Sprintf("- %s\n", host))
+		}
+	} else {
+		sb.WriteString("All NSCC accounts connected successfully.\n")
 	}
 	logger.Debugf("Generated daily report:\n%s", sb.String())
 	// Return the report as a string

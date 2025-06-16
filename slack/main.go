@@ -74,12 +74,14 @@ func main() {
 	latestFilePath := fmt.Sprintf("%s/output/latest_myprojects.txt", cfg.CacheDir)
 	// file with the latest data
 	myprojectsOutputFilepath := fmt.Sprintf("%s/output/myprojects_%s.csv", cfg.CacheDir, timestamp)
+	failedHosts := make([]string, 0)
 
 	for host := range sshKeys {
 		conn, err := utils.GetConnection(ctx, host)
 		if err != nil {
 			logger.Errorf("Failed to connect to host %s: %v", host, err)
-			panic(err)
+			failedHosts = append(failedHosts, host)
+			continue
 		}
 		defer conn.Close()
 		sshConns[host] = conn
@@ -100,7 +102,7 @@ func main() {
 	}
 
 	// get daily report string
-	message, err := utils.GetDailyReportString(ctx, reportTitle, myprojectsOutputFilepath, prevReportPath)
+	message, err := utils.GetDailyReportString(ctx, reportTitle, myprojectsOutputFilepath, prevReportPath, failedHosts)
 	if err != nil {
 		logger.Errorf("Failed to get daily report string: %v", err)
 		panic(err)

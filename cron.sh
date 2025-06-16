@@ -27,14 +27,19 @@ add_cron_job() {
   return 0
 }
 
-project_dir="${HOME}/ai-commons"
-cmd="go run $project_dir/slack/main.go"
+./build_slackbot.sh
+
+project_dir=$PWD
+cmd="${project_dir}/bin/slack_bot"
+date_cmd=$(which date)
+# Ensure the logs directory exists
+mkdir -p "${project_dir}/logs"
 
 # Add a cron job to run a script at 9am on weekdays and log output
-add_cron_job "0 9 * * Mon-Fri" "$cmd --title 'NSCC Usage AM Report'" "$project_dir/logs/cron_nscc_am.log"
+add_cron_job "0 1 * * Mon-Fri" "$cmd 'NSCC Usage AM Report'" "$project_dir/logs/cron_nscc_am_\`$date_cmd +\%Y\%m\%d\`.log"
 
 # Add a cron job to run a command at 6pm on weekdays and log output
-add_cron_job "0 18 * * Mon-Fri" "$cmd --title 'NSCC Usage PM Report'" "$project_dir/logs/cron_nscc_pm.log"
+add_cron_job "0 9 * * Mon-Fri" "$cmd 'NSCC Usage PM Report'" "$project_dir/logs/cron_nscc_pm_\`$date_cmd +\%Y\%m\%d\`.log"
 
 # List existing cron jobs
 echo "Current cron jobs:"
