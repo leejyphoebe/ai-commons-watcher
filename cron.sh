@@ -1,5 +1,6 @@
 #!/usr/bin/bash
 
+project_dir=$PWD
 # Function to add a cron job
 add_cron_job() {
   local schedule="$1"
@@ -27,13 +28,22 @@ add_cron_job() {
   return 0
 }
 
+add_run_slackbot() {
+  local script_path="$project_dir/bin/run_slackbot.sh"
+  echo "#!/usr/bin/bash" > "$script_path"
+  echo "" >> "$script_path"
+  echo "title=\$1" >> "$script_path"
+  echo "export \$(cat $project_dir/.env | xargs)" >> "$script_path"
+  echo "$project_dir/bin/slack_bot --config $project_dir/config.yaml --title \"\$1\"" >> "$script_path"
+}
+
 ./build_slackbot.sh
 
-project_dir=$PWD
-cmd="${project_dir}/bin/slack_bot"
+cmd="$project_dir/bin/run_slackbot.sh"
 date_cmd=$(which date)
 # Ensure the logs directory exists
 mkdir -p "${project_dir}/logs"
+add_run_slackbot
 
 # Add a cron job to run a script at 9am on weekdays and log output
 add_cron_job "0 1 * * Mon-Fri" "$cmd 'NSCC Usage AM Report'" "$project_dir/logs/cron_nscc_am_\`$date_cmd +\%Y\%m\%d\`.log"
