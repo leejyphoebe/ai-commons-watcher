@@ -35,9 +35,12 @@ add_run_slackbot() {
   echo "title=\$1" >> "$script_path"
   echo "export \$(cat $project_dir/.env | xargs)" >> "$script_path"
   echo "$project_dir/bin/slack_bot --config $project_dir/config.yaml --title \"\$1\"" >> "$script_path"
+  chmod +x "$script_path"
+  echo "Created run_slackbot script at $script_path"
 }
 
-./build_slackbot.sh
+# execute run_slackbot.sh
+$script_path
 
 cmd="$project_dir/bin/run_slackbot.sh"
 date_cmd=$(which date)
