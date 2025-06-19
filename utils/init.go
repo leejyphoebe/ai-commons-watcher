@@ -9,7 +9,7 @@ import (
 
 func CheckFirstRun() bool {
 	_, err := os.Stat(".cache")
-	return os.IsNotExist(err) 
+	return os.IsNotExist(err)
 }
 
 func InitSSHKeys(ctx context.Context, hostname string, appendKnownHosts, appendSSHConfig bool) (map[string]string, error) {
@@ -53,7 +53,7 @@ func InitSSHKeys(ctx context.Context, hostname string, appendKnownHosts, appendS
 	if len(sshKeys) == 0 {
 		logger.Warn("No SSH keys were downloaded. Please check your Bitwarden vault and ensure there are SSH keys available.")
 		return nil, fmt.Errorf("no SSH keys were downloaded")
-	} 
+	}
 
 	if appendKnownHosts {
 		// append known hosts

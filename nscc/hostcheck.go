@@ -1,30 +1,28 @@
-package utils
+package nscc
 
 import (
+	"ai-commons/utils"
 	"context"
 	"fmt"
 	"strings"
-
-	"golang.org/x/crypto/ssh"
 )
 
-func IsGitSetup(
+func (node *Node) IsGitSetup(
 	ctx context.Context,
-	conn *ssh.Client,
 ) (bool, error) {
-	logger, err := GetLoggerFromContext(ctx)
+	logger, err := utils.GetLoggerFromContext(ctx)
 	if err != nil {
 		return false, err
 	}
 
 	// Check if the connection is established
-	if conn == nil {
+	if node.Conn == nil {
 		return false, fmt.Errorf("SSH connection is nil")
 	}
 
 	// 1. Check if git is installed
 	cmd := "git --version"
-	out, _, err := RunCommandGetOutput(ctx, cmd, conn)
+	out, _, err := utils.RunCommandGetOutput(ctx, cmd, node.Conn)
 	if err != nil {
 		return false, fmt.Errorf("failed to run command: %v", err)
 	}
@@ -35,14 +33,14 @@ func IsGitSetup(
 
 	// 2. Check if username and email are configured
 	cmd = "git config --get user.name"
-	out, _, err = RunCommandGetOutput(ctx, cmd, conn)
+	out, _, err = utils.RunCommandGetOutput(ctx, cmd, node.Conn)
 	if err != nil {
 		return false, fmt.Errorf("failed to run command: %v. git user.name might not be configured on the host, %w", cmd, err)
 	}
 	logger.Infof("Git user.name: %s", out)
 
 	cmd = "git config --get user.email"
-	out, _, err = RunCommandGetOutput(ctx, cmd, conn)
+	out, _, err = utils.RunCommandGetOutput(ctx, cmd, node.Conn)
 	if err != nil {
 		return false, fmt.Errorf("failed to run command: %v. git user.email might not be configured on the host, %w", cmd, err)
 	}
@@ -51,7 +49,7 @@ func IsGitSetup(
 
 	// 3. Check if SSH folder is present with at least one key
 	cmd = "ls -A ~/.ssh"
-	out, _, err = RunCommandGetOutput(ctx, cmd, conn)
+	out, _, err = utils.RunCommandGetOutput(ctx, cmd, node.Conn)
 	// if no folder doesn't exist, it will return an error
 	if err != nil {
 		return false, fmt.Errorf("failed to run command: %v", err)

@@ -2,6 +2,7 @@ package main
 
 import (
 	"ai-commons/config"
+	"ai-commons/nscc"
 	"ai-commons/utils"
 	"context"
 	"flag"
@@ -10,6 +11,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
+	"gopkg.in/yaml.v3"
 )
 
 func main() {
@@ -59,46 +61,36 @@ func main() {
 	sshConns := make(map[string]*ssh.Client)
 	logger.Info("Connecting to SSH hosts...")
 	ctx = context.WithValue(ctx, utils.LoggerContextKey, logger)
+	states := nscc.NodeStates{}
 	for host := range sshKeys {
 		conn, err := utils.GetConnection(ctx, host)
 		if err != nil {
 			logger.Errorf("Failed to connect to host %s: %v", host, err)
-			panic(err)
 		}
 		defer conn.Close()
 		sshConns[host] = conn
 		logger.Infof("Successfully connected to host %s", host)
-		// check credit + number of gpus currently used
-		utils.RunCommand(ctx, "echo '\nHello World from "+host+"!\n'", conn)
+		node := nscc.Node{Host: host, Conn: conn}
+		state, err := node.GetNodeState(ctx)
+		if err != nil {
+			logger.Errorf("Failed to get node state for host %s: %v", host, err)
+			continue
+		}
+		logger.Infof("Node state for host %s: %+v", host, node)
+		states.Nodes[host] = state
 	}
 
-	// check if git is setup in login node
-	ok, err := utils.IsGitSetup(ctx, sshConns[cfg.SSH.MasterHost])
+	yamlData, err := yaml.Marshal(states)
 	if err != nil {
-		logger.Errorf("Failed to check git setup: %v", err)
-		panic(err)
-	}
-	if !ok {
-		logger.Errorf("git is not set up correctly for %s. Please ensure git is installed, user.name and user.email are configured, and SSH keys are present", cfg.SSH.MasterHost)
-		os.Exit(1)
+		logger.Errorf("Failed to marshal node state to YAML: %v", err)
+		return
 	}
 
-	// handle signals for graceful shutdown
-
-
-	// setup environment variables in login node
-
-
-	// install modules in login node
-
-
-	// run submit job commands in login node
-
-
-	// cleanup
-
-
-	// write tests
-
+	err = utils.WriteToFile(ctx, cfg.NodeStateFilePath, string(yamlData), 0644)
+	if err != nil {
+		logger.Errorf("Failed to write node state to file %s: %v", cfg.NodeStateFilePath, err)
+		return
+	}
+	logger.Infof("Node state written to %s", cfg.NodeStateFilePath)
+	logger.Infof("Node state YAML:\n%s", string(yamlData))
 }
-	

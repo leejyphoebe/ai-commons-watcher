@@ -51,13 +51,35 @@ type NsccConfig struct {
 	Envs            []EnvConfig `yaml:"envs"`             // environment variables to be set on NSCC
 }
 
+type ExperimentConfig struct {
+	Src  string `yaml:"src"`  // source directory for the experiment
+	Dest string `yaml:"dest"` // destination directory for the experiment on NSCC
+}
+
+type JobConfig struct {
+	Name                  string             `yaml:"name"`                // name of the job
+	Description           string             `yaml:"description"`         // description of the job
+	NumJobsPerNode        int                `yaml:"num_jobs_per_node"`   // number of jobs to run per node
+	NumNodes              int                `yaml:"num_nodes"`           // number of nodes to use for the job
+	Nodes                 []string           `yaml:"nodes"`               // list of nodes to run the job on
+	LocalConfigDir        string             `yaml:"local_config_dir"`    // local directory for job configuration
+	RemoteConfigDir       string             `yaml:"remote_config_dir"`   // remote directory for job configuration on NSCC
+	ExperimentConfigs     []ExperimentConfig `yaml:"experiment_configs"`  // list of experiment configurations for the job
+	CmdDir                string             `yaml:"cmd_dir"`             // directory where the job command is located
+	Command               string             `yaml:"command"`             // command to run the job
+	SetupScriptPath       string             `yaml:"setup_script"`        // path to the setup script to be executed before running the job
+	RemoteSetupScriptPath string             `yaml:"remote_setup_script"` // path to the setup script on the remote node
+}
+
 type Config struct {
 	CacheDir               string          `yaml:"cache_dir"`
 	NsccUsageCacheFilePath string          `yaml:"nscc_usage_cache_file_path"`
+	NodeStateFilePath      string          `yaml:"node_state_file_path"`
 	SSH                    SSHInitConfig   `yaml:"ssh"`
 	Logging                LoggingConfig   `yaml:"logging"`
 	Bitwarden              BitwardenConfig `yaml:"bitwarden"`
 	NSCC                   NsccConfig      `yaml:"nscc"`
+	Jobs                   []JobConfig     `yaml:"jobs"`
 }
 
 var config *Config
@@ -99,6 +121,9 @@ func InitConfig(filePath string) error {
 	if cfg.NsccUsageCacheFilePath == "" {
 		cfg.NsccUsageCacheFilePath = "$PWD/.cache/nscc_usage.csv"
 	}
+	if cfg.NodeStateFilePath == "" {
+		cfg.NodeStateFilePath = "$PWD/.cache/node_state.yaml"
+	}
 	// if cfg.Nscc.ProjectRepo == "" {
 	// 	return fmt.Errorf("project_repo is required in the configuration")
 	// }
@@ -128,6 +153,55 @@ func InitConfig(filePath string) error {
 	}
 	if len(cfg.NSCC.RequiredModules) == 0 {
 		cfg.NSCC.RequiredModules = []string{"git", "ssh", "singularity"}
+	}
+
+	// validate job config
+	for i, job := range cfg.Jobs {
+		if job.Name == "" {
+			return fmt.Errorf("job[%d].name is required in the configuration", i)
+		}
+		if job.Description == "" {
+			return fmt.Errorf("job[%d].description is required in the configuration", i)
+		}
+		if job.NumJobsPerNode <= 0 {
+			return fmt.Errorf("job[%d].num_jobs_per_node must be greater than 0", i)
+		}
+		if job.NumNodes <= 0 {
+			return fmt.Errorf("job[%d].num_nodes must be greater than 0", i)
+		}
+		if job.LocalConfigDir == "" {
+			return fmt.Errorf("job[%d].local_config_dir is required in the configuration", i)
+		}
+		if job.RemoteConfigDir == "" {
+			return fmt.Errorf("job[%d].remote_config_dir is required in the configuration", i)
+		}
+		if job.CmdDir == "" {
+			return fmt.Errorf("job[%d].cmd_dir is required in the configuration", i)
+		}
+		if job.Command == "" {
+			return fmt.Errorf("job[%d].command is required in the configuration", i)
+		}
+		if job.SetupScriptPath == "" {
+			return fmt.Errorf("job[%d].setup_script is required in the configuration", i)
+		}
+		if job.RemoteSetupScriptPath == "" {
+			return fmt.Errorf("job[%d].remote_setup_script is required in the configuration", i)
+		}
+		if len(job.ExperimentConfigs) == 0 {
+			return fmt.Errorf("job[%d].experiment_configs must contain at least one experiment configuration", i)
+		}
+		if len(job.ExperimentConfigs) != job.NumJobsPerNode*len(job.Nodes) {
+			return fmt.Errorf("job[%d].experiment_configs length must match num_jobs_per_node * len(job.nodes)", i)
+		}
+		// Validate each experiment config
+		for j, exp := range job.ExperimentConfigs {
+			if exp.Src == "" {
+				return fmt.Errorf("job[%d].experiment_configs[%d].src is required in the configuration", i, j)
+			}
+			if exp.Dest == "" {
+				return fmt.Errorf("job[%d].experiment_configs[%d].dest is required in the configuration", i, j)
+			}
+		}
 	}
 
 	// Expand environment variables in paths

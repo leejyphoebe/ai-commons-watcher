@@ -2,6 +2,7 @@ package main
 
 import (
 	"ai-commons/config"
+	"ai-commons/nscc"
 	"ai-commons/utils"
 	"context"
 	"flag"
@@ -85,15 +86,19 @@ func main() {
 		}
 		defer conn.Close()
 		sshConns[host] = conn
+		node := &nscc.Node{
+			Host: host,
+			Conn: conn,
+		}
 		logger.Infof("Successfully connected to host %s", host)
 
 		// write myprojects_<timestamp>.csv to ./.cache/output/latest_myprojects.txt
-		projects, err := utils.GetDailyReportForUser(ctx, conn)
+		projects, err := node.GetProjects(ctx)
 		if err != nil {
 			logger.Errorf("Failed to get user daily report: %v", err)
 			panic(err)
 		}
-		utils.AppendMyProjectsToFile(ctx, projects, myprojectsOutputFilepath)
+		node.SaveSummaryToCsv(ctx, projects, myprojectsOutputFilepath)
 	}
 	// read ./.cache/output/latest_myprojects.txt
 	prevReportPath, err := utils.ReadFile(ctx, latestFilePath)
@@ -102,7 +107,7 @@ func main() {
 	}
 
 	// get daily report string
-	message, err := utils.GetDailyReportString(ctx, reportTitle, myprojectsOutputFilepath, prevReportPath, failedHosts)
+	message, err := nscc.GetDailyReportString(ctx, reportTitle, myprojectsOutputFilepath, prevReportPath, failedHosts)
 	if err != nil {
 		logger.Errorf("Failed to get daily report string: %v", err)
 		panic(err)

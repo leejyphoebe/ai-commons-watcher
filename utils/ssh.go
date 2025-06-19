@@ -80,7 +80,7 @@ func LoadSSHConfig(ctx context.Context, host string) (*ssh.ClientConfig, error) 
 			ssh.PublicKeys(key),
 		},
 		HostKeyCallback: hostKeyCallback,
-		Timeout: 5 * time.Second,
+		Timeout:         5 * time.Second,
 	}
 
 	return clientConfig, nil
@@ -191,7 +191,7 @@ func RunCommandGetOutput(ctx context.Context, cmd string, conn *ssh.Client) (str
 			logger.Errorf("failed to copy stderr: %v", err)
 		}
 	}()
-	
+
 	// run the command
 	runErr := sess.Start(cmd)
 	if runErr != nil {

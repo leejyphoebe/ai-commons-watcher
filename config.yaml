@@ -1,5 +1,6 @@
 cache_dir: "$PWD/.cache"
 nscc_usage_cache_file_path: "$PWD/.cache/nscc_usage.csv"
+node_state_file: "$PWD/.cache/nodes_state.yaml"
 logging:
   file: ""
   level: INFO
@@ -7,7 +8,7 @@ logging:
   stdout: true
 ssh:
   hostname: "aspire2antu.nscc.sg"
-  master_host: "colinhon"
+  master_host: "silv0011"
   config_path: "$PWD/.cache/ssh_config"
   keys_path: "$HOME/.ssh"
   known_hosts_path: "$PWD/.cache/known_hosts"
@@ -16,15 +17,25 @@ bitwarden:
   identity_url: "https://identity.bitwarden.eu"
   state_file: "$PWD/.cache/state"
 jobs:
-  - name: "vllm_server"
-    image: "vllm_nscc.sif"
-    num_nodes: 2
+  - name: "slimsc"
+    num_jobs_per_node: 2
     nodes: ["silv0011", "collinhon"]
-    command: "echo 'Hello world from server!'"
-  - name: "vllm_client"
-    project_repo: "github.com/googlercolin/slimsc"
-    node_mode: "inherit"
-    command: "echo 'Hello world from client!'"
+    local_config_dir: "../slimsc/prune/jobs"
+    remote_config_dir: "/scratch/users/ntu/$USER/slimsc/prune/jobs"
+    experiment_configs: 
+      - src: "experiments.yaml"
+        dest: "experiments.yaml"
+      - src: "experiments_2.yaml"
+        dest: "experiments1.yaml"
+      - src: "experiments_3.yaml"
+        dest: "experiments.yaml"
+      - src: "experiments_4.yaml"
+        dest: "experiments1.yaml"
+    cmd_dir: "/scratch/users/ntu/$USER/slimsc/prune"
+    # command: "python jobs/submit_jobs.py --config jobs/experiments.yaml"
+    command: "echo \"Hello World!\""
+    setup_script: "setup.sh"
+    remote_setup_script: "/scratch/users/ntu/$USER/setup.sh"
 nscc:
   copy_dir: "/scratch/users/ntu/$USER"
   sif_images_dir: "/scratch/users/ntu/$USER/sif_images"
@@ -37,9 +48,6 @@ nscc:
     - "python/3.10.9"
     - "git"
     - "singularity"
-  setup_steps:
-    - "rm /scratch/users/ntu/$USER/sif_images/save_model.sif"
-    - "singularity pull /scratch/users/ntu/$USER/sif_images/vllm_nscc.sif docker://broccolin/vllm-nscc:latest"
   envs:
     - key: "SINGULARITY_CACHEDIR"
       value: "/scratch/users/ntu/$USER/.singularity"

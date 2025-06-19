@@ -1,14 +1,13 @@
-package utils
+package nscc
 
 import (
+	"ai-commons/utils"
 	"context"
 	"fmt"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
-
-	"golang.org/x/crypto/ssh"
 )
 
 type Project struct {
@@ -34,7 +33,7 @@ type CreditUsageByType struct {
 	SUUsed float64
 }
 
-type MyProjectsOutput struct {
+type MyProjectsSummary struct {
 	Timestamp   time.Time // This should be set based on the current date and time
 	LastUpdated time.Time
 	Username    string
@@ -49,9 +48,9 @@ type MyProjectsOutput struct {
 
 var timeFormat = "2006-01-02 15:04:05"
 
-func GetDailyReportForUser(ctx context.Context, conn *ssh.Client) ([]Project, error) {
+func (node *Node) GetProjects(ctx context.Context) ([]Project, error) {
 	// Get the logger from the context
-	logger, err := GetLoggerFromContext(ctx)
+	logger, err := utils.GetLoggerFromContext(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve logger from context: %v", err)
 	}
@@ -61,7 +60,7 @@ func GetDailyReportForUser(ctx context.Context, conn *ssh.Client) ([]Project, er
 
 	// run myprojects to check credits
 	cmd := "myprojects"
-	stdout, _, err := RunCommandGetOutput(ctx, cmd, conn)
+	stdout, _, err := utils.RunCommandGetOutput(ctx, cmd, node.Conn)
 	if err != nil {
 		return nil, fmt.Errorf("failed to run credit check command: %v", err)
 	}
@@ -70,7 +69,7 @@ func GetDailyReportForUser(ctx context.Context, conn *ssh.Client) ([]Project, er
 	}
 	lines := strings.Split(stdout, "\n")
 	lines = append(lines, "---END---\n") // hax to mark the end of the output
-	projects, err := ParseMyProjectsStdout(ctx, conn.User(), lines)
+	projects, err := parseMyProjectsStdout(ctx, node.Conn.User(), lines)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse myprojects output: %v", err)
 	}
@@ -117,8 +116,8 @@ func splitTableLine(line string) []string {
 	return fields
 }
 
-func ParseMyProjectsStdout(ctx context.Context, username string, lines []string) ([]Project, error) {
-	logger, err := GetLoggerFromContext(ctx)
+func parseMyProjectsStdout(ctx context.Context, username string, lines []string) ([]Project, error) {
+	logger, err := utils.GetLoggerFromContext(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve logger from context: %v", err)
 	}
@@ -240,20 +239,20 @@ func ParseMyProjectsStdout(ctx context.Context, username string, lines []string)
 	return projects, nil
 }
 
-func CreateMyProjectOutput(ctx context.Context, project Project) (MyProjectsOutput, error) {
-	logger, err := GetLoggerFromContext(ctx)
+func createMyProjectSummary(ctx context.Context, project Project) (MyProjectsSummary, error) {
+	logger, err := utils.GetLoggerFromContext(ctx)
 	if err != nil {
-		return MyProjectsOutput{}, fmt.Errorf("failed to retrieve logger from context: %v", err)
+		return MyProjectsSummary{}, fmt.Errorf("failed to retrieve logger from context: %v", err)
 	}
 
 	if project.CreditSummary.Unit == "" {
-		return MyProjectsOutput{}, fmt.Errorf("project %s has empty credit summary unit", project.Name)
+		return MyProjectsSummary{}, fmt.Errorf("project %s has empty credit summary unit", project.Name)
 	}
 	if len(project.Usage) == 0 {
-		return MyProjectsOutput{}, fmt.Errorf("project %s has no usage data", project.Name)
+		return MyProjectsSummary{}, fmt.Errorf("project %s has no usage data", project.Name)
 	}
 
-	output := MyProjectsOutput{
+	output := MyProjectsSummary{
 		Username:    project.Username,
 		ProjectName: project.Name,
 		Grant:       project.CreditSummary.Grant,
@@ -272,13 +271,13 @@ func CreateMyProjectOutput(ctx context.Context, project Project) (MyProjectsOutp
 		}
 	}
 
-	logger.Debugf("Created MyProjectsOutput: %+v", output)
+	logger.Debugf("Created MyProjectsSummary: %+v", output)
 	return output, nil
 }
 
 // save summary and breakdown as csv
-func AppendMyProjectsToFile(ctx context.Context, projects []Project, filePath string) error {
-	logger, err := GetLoggerFromContext(ctx)
+func (node *Node) SaveSummaryToCsv(ctx context.Context, projects []Project, filePath string) error {
+	logger, err := utils.GetLoggerFromContext(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to retrieve logger from context: %v", err)
 	}
@@ -286,7 +285,7 @@ func AppendMyProjectsToFile(ctx context.Context, projects []Project, filePath st
 	logger.Infof("Writing myprojects data to %s", filePath)
 
 	var sb strings.Builder
-	isFileExists, err := CheckIfFileExists(filePath)
+	isFileExists, err := utils.CheckIfFileExists(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to check if file exists %s: %v", filePath, err)
 	}
@@ -299,9 +298,9 @@ func AppendMyProjectsToFile(ctx context.Context, projects []Project, filePath st
 	}
 
 	for _, project := range projects {
-		output, err := CreateMyProjectOutput(ctx, project)
+		output, err := createMyProjectSummary(ctx, project)
 		if err != nil {
-			return fmt.Errorf("failed to create MyProjectsOutput for project %s: %v", project.Name, err)
+			return fmt.Errorf("failed to create MyProjectsSummary for project %s: %v", project.Name, err)
 		}
 		sb.WriteString(fmt.Sprintf("%s,%s,%s,%s,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f",
 			output.Timestamp.Format(timeFormat),
@@ -318,34 +317,34 @@ func AppendMyProjectsToFile(ctx context.Context, projects []Project, filePath st
 		logger.Debugf("Appended project %s data to string builder", project.Name)
 	}
 
-	return AppendToFile(ctx, filePath, sb.String(), 0644)
+	return utils.AppendToFile(ctx, filePath, sb.String(), 0644)
 }
 
-func sortOutputByBalanceAsc(outputs []MyProjectsOutput) []MyProjectsOutput {
+func sortOutputByBalanceAsc(outputs []MyProjectsSummary) []MyProjectsSummary {
 	sort.Slice(outputs[:], func(i, j int) bool {
 		return outputs[i].Balance < outputs[j].Balance
 	})
 	return outputs
 }
 
-func ParseMyProjectsCsv(ctx context.Context, line string) (MyProjectsOutput, error) {
+func parseMyProjectsCsv(line string) (MyProjectsSummary, error) {
 	if strings.HasPrefix(line, "timestamp") || line == "" {
 		// Skip header line
-		return MyProjectsOutput{}, nil
+		return MyProjectsSummary{}, nil
 	}
 	fields := strings.Split(line, ",")
 	if len(fields) < 9 {
-		return MyProjectsOutput{}, fmt.Errorf("malformed line: %s, expected at least 9 fields", line)
+		return MyProjectsSummary{}, fmt.Errorf("malformed line: %s, expected at least 9 fields", line)
 	}
 
 	timestamp, err := time.Parse(timeFormat, fields[0])
 	if err != nil {
-		return MyProjectsOutput{}, fmt.Errorf("invalid timestamp in line: %s", line)
+		return MyProjectsSummary{}, fmt.Errorf("invalid timestamp in line: %s", line)
 	}
 
 	lastUpdated, err := time.Parse(timeFormat, fields[1])
 	if err != nil {
-		return MyProjectsOutput{}, fmt.Errorf("invalid last updated time in line: %s", line)
+		return MyProjectsSummary{}, fmt.Errorf("invalid last updated time in line: %s", line)
 	}
 
 	values := make([]float64, 6)
@@ -359,7 +358,7 @@ func ParseMyProjectsCsv(ctx context.Context, line string) (MyProjectsOutput, err
 		}
 	}
 
-	output := MyProjectsOutput{
+	output := MyProjectsSummary{
 		Timestamp:   timestamp,
 		LastUpdated: lastUpdated,
 		Username:    fields[2],
@@ -375,24 +374,24 @@ func ParseMyProjectsCsv(ctx context.Context, line string) (MyProjectsOutput, err
 	return output, nil
 }
 
-func ReadOutputFileList(ctx context.Context, filePath string) ([]MyProjectsOutput, error) {
-	logger, err := GetLoggerFromContext(ctx)
+func readOutputFileToList(ctx context.Context, filePath string) ([]MyProjectsSummary, error) {
+	logger, err := utils.GetLoggerFromContext(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve logger from context: %v", err)
 	}
 
 	logger.Infof("Reading myprojects data from %s", filePath)
 
-	data, err := ReadFile(ctx, filePath)
+	data, err := utils.ReadFile(ctx, filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file %s: %v", filePath, err)
 	}
 
 	lines := strings.Split(data, "\n")
-	outputs := make([]MyProjectsOutput, 0)
+	outputs := make([]MyProjectsSummary, 0)
 
 	for _, line := range lines {
-		output, err := ParseMyProjectsCsv(ctx, line)
+		output, err := parseMyProjectsCsv(line)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse line: %s, error: %v", line, err)
 		}
@@ -413,24 +412,24 @@ func ReadOutputFileList(ctx context.Context, filePath string) ([]MyProjectsOutpu
 	return outputs, nil
 }
 
-func ReadOutputFileMap(ctx context.Context, filePath string) (map[string]MyProjectsOutput, error) {
-	logger, err := GetLoggerFromContext(ctx)
+func readOutputFileToMap(ctx context.Context, filePath string) (map[string]MyProjectsSummary, error) {
+	logger, err := utils.GetLoggerFromContext(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve logger from context: %v", err)
 	}
 
 	logger.Infof("Reading myprojects data from %s", filePath)
 
-	data, err := ReadFile(ctx, filePath)
+	data, err := utils.ReadFile(ctx, filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file %s: %v", filePath, err)
 	}
 
 	lines := strings.Split(data, "\n")
-	outputs := make(map[string]MyProjectsOutput)
+	outputs := make(map[string]MyProjectsSummary)
 
 	for _, line := range lines {
-		output, err := ParseMyProjectsCsv(ctx, line)
+		output, err := parseMyProjectsCsv(line)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse line: %s, error: %v", line, err)
 		}
@@ -454,14 +453,14 @@ func ReadOutputFileMap(ctx context.Context, filePath string) (map[string]MyProje
 //     Balance: <balance>
 //     ...
 func GetDailyReportString(ctx context.Context, title string, newFilePath, prevFilePath string, failedHosts []string) (string, error) {
-	logger, err := GetLoggerFromContext(ctx)
+	logger, err := utils.GetLoggerFromContext(ctx)
 	if err != nil {
 		return "", fmt.Errorf("failed to retrieve logger from context: %v", err)
 	}
 
 	logger.Infof("Generating daily report string from %s", newFilePath)
 
-	new, err := ReadOutputFileList(ctx, newFilePath)
+	new, err := readOutputFileToList(ctx, newFilePath)
 	if err != nil {
 		return "", fmt.Errorf("failed to read today's output file %s: %v", newFilePath, err)
 	}
@@ -470,7 +469,7 @@ func GetDailyReportString(ctx context.Context, title string, newFilePath, prevFi
 		logger.Warn("Yesterday's output file path is empty, skipping previous data")
 		prevFilePath = newFilePath // Use new file as a fallback
 	}
-	prev, err := ReadOutputFileMap(ctx, prevFilePath)
+	prev, err := readOutputFileToMap(ctx, prevFilePath)
 	if err != nil {
 		return "", fmt.Errorf("failed to read previous output file %s: %v", prevFilePath, err)
 	}
@@ -483,7 +482,7 @@ func GetDailyReportString(ctx context.Context, title string, newFilePath, prevFi
 	for _, newOutput := range new {
 		prevOutput, exists := prev[newOutput.ProjectName]
 		if !exists {
-			prevOutput = MyProjectsOutput{}
+			prevOutput = MyProjectsSummary{}
 		}
 		if prevTimestamp.IsZero() {
 			if !prevOutput.Timestamp.IsZero() {
