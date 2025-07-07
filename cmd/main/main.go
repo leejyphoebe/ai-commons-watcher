@@ -2,7 +2,9 @@ package main
 
 import (
 	"ai-commons/config"
+	"ai-commons/nscc"
 	"ai-commons/utils"
+	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -43,11 +45,14 @@ func main() {
 
 	// handle signals for graceful shutdown
 
-	// setup environment variables in login node
-
-	// install modules in login node
-
 	// run submit job commands in login node
+	ctx := context.WithValue(context.Background(), utils.LoggerContextKey, logger)
+	_, _, err = nscc.RunJobs(ctx)
+	if err != nil {
+		logger.Error("Failed to run jobs: ", err)
+		os.Exit(1)
+	}
+	logger.Info("Jobs executed successfully")
 
 	// cleanup
 

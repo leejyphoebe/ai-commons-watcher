@@ -8,7 +8,7 @@ logging:
   stdout: true
 ssh:
   hostname: "aspire2antu.nscc.sg"
-  master_host: "silv0011"
+  master_host: "silv0011" # Master node ?
   config_path: "$PWD/.cache/ssh_config"
   keys_path: "$HOME/.ssh"
   known_hosts_path: "$PWD/.cache/known_hosts"
@@ -16,40 +16,38 @@ bitwarden:
   api_url: "https://api.bitwarden.eu"
   identity_url: "https://identity.bitwarden.eu"
   state_file: "$PWD/.cache/state"
-jobs:
+experiments:
   - name: "slimsc"
-    num_jobs_per_node: 2
-    nodes: ["silv0011", "collinhon"]
+    nodes:
+      - host: silv0011
+        experiment_config_paths:
+          - src: "experiments.yaml"
+            dest: "experiments_1.yaml"
+            command: "echo \"Hello World!\""
+            # command: "python jobs/submit_jobs.py --config jobs/experiments_1.yaml"
+          - src: "experiments1.yaml"
+            dest: "experiments_2.yaml"
+            command: "echo \"Hello World!\""
+            # command: "python jobs/submit_jobs.py --config jobs/experiments_2.yaml"
     local_config_dir: "../slimsc/prune/jobs"
     remote_config_dir: "/scratch/users/ntu/$USER/slimsc/prune/jobs"
-    experiment_configs: 
-      - src: "experiments.yaml"
-        dest: "experiments.yaml"
-      - src: "experiments_2.yaml"
-        dest: "experiments1.yaml"
-      - src: "experiments_3.yaml"
-        dest: "experiments.yaml"
-      - src: "experiments_4.yaml"
-        dest: "experiments1.yaml"
     cmd_dir: "/scratch/users/ntu/$USER/slimsc/prune"
-    # command: "python jobs/submit_jobs.py --config jobs/experiments.yaml"
-    command: "echo \"Hello World!\""
-    setup_script: "setup.sh"
-    remote_setup_script: "/scratch/users/ntu/$USER/setup.sh"
+
+    # setup and clean up scripts
+    env_dir: "/scratch/users/ntu/$USER/env"
+    setup:
+      setup_script_local_path: "env/setup.sh"
+      setup_script_remote_path: "setup.sh"
+      setup_files:
+        - src: "env/environment.yml"
+          dest: "environment.yml"
+    cleanup:
+      cleanup_script: "env/cleanup.sh"
+      cleanup_script_remote_path: "cleanup.sh"
 nscc:
-  copy_dir: "/scratch/users/ntu/$USER"
-  sif_images_dir: "/scratch/users/ntu/$USER/sif_images"
-  result_dir: "/scratch/users/ntu/$USER/results"
-  model:
-    dir: "/scratch/users/ntu/$USER/models"
-    name: "R1-Distill-Qwen-14B"
-    source: "hf"
   required_modules:
     - "python/3.10.9"
     - "git"
     - "singularity"
-  envs:
-    - key: "SINGULARITY_CACHEDIR"
-      value: "/scratch/users/ntu/$USER/.singularity"
-    - key: "HF_HUB_ENABLE_HF_TRANSFER"
-      value: "1"
+  secret:
+    - path: ".env"

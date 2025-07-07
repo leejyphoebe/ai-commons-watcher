@@ -52,7 +52,7 @@ func RsyncTransfer(ctx context.Context, conn *ssh.Client, src, dst string, direc
 		// For L->R, a local rsync client talks to a remote rsync --server process
 		// over the SSH session's pipes.
 		logger.Infof("Initiating Local-to-Remote rsync from local '%s' to remote '%s'...", src, dst)
-		return rsyncLocalToRemote(ctx, conn, src, dst, options)
+		return rsyncLocalToRemote(ctx, src, dst, options)
 
 	case RsyncRemoteToLocal:
 		// For R->L, a local rsync client talks to a remote rsync --server --sender process
@@ -100,96 +100,37 @@ func rsyncRemoteToRemote(ctx context.Context, conn *ssh.Client, srcRemote, dstRe
 }
 
 // rsyncLocalToRemote transfers files from local to remote using rsync over SSH pipes.
-func rsyncLocalToRemote(ctx context.Context, conn *ssh.Client, srcLocal, dstRemote, options string) error {
+func rsyncLocalToRemote(ctx context.Context, srcLocal, dstRemote, options string) error {
 	logger, err := GetLoggerFromContext(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get logger from context: %w", err)
 	}
 	logger.Debugf("Starting Local-to-Remote rsync from '%s' to '%s' with options: %s", srcLocal, dstRemote, options)
-	// 1. Prepare the remote rsync server command
-	remoteSession, err := conn.NewSession()
-	if err != nil {
-		return fmt.Errorf("failed to create SSH session for L->R remote rsync server: %w", err)
-	}
-	defer remoteSession.Close()
 
-	remoteStdin, err := remoteSession.StdinPipe()
-	if err != nil {
-		return fmt.Errorf("failed to get stdin pipe for remote rsync server: %w", err)
-	}
-	remoteStdout, err := remoteSession.StdoutPipe()
-	if err != nil {
-		return fmt.Errorf("failed to get stdout pipe for remote rsync server: %w", err)
-	}
-	// Remote rsync stderr should go to our local stderr
-	remoteSession.Stderr = os.Stderr
+	args := fmt.Sprintf("%s -e ssh %s %s", options, srcLocal, dstRemote)
+	logger.Infof("Executing local to remote rsync command: rsync %s", args)
+	cmd := exec.Command("rsync", strings.Split(args, " ")...)
 
-	// Start remote rsync --server --receiver (it receives from the client)
-	// The exact options depend on the rsync client. Common is -vlogDtprze.iLs --numeric-ids
-	// We'll pass standard options for receiver.
-	serverCommand := fmt.Sprintf("rsync --server --daemon %s %s", options, strconv.Quote(dstRemote))
-	logger.Debugf("Starting remote rsync server (L->R): %s", serverCommand)
-
-	if err := remoteSession.Start(serverCommand); err != nil {
-		return fmt.Errorf("failed to start remote rsync server for L->R: %w", err)
-	}
-
-	// 2. Prepare the local rsync client command
-	// For local-to-remote, the local rsync acts as the sender.
-	// We use "--read-batch=-" and "--write-batch=-" for piping.
-	// The --rsh=/bin/sh part is crucial for rsync to not try to spawn its own ssh.
-	// Instead, it will use its stdout/stdin as the "remote shell" pipes.
-	localRsyncArgs := []string{
-		options,
-		srcLocal,        // Local source path
-		".",             // Remote destination is implicit via the remote --server command
-		"--rsh=/bin/sh", // Tell rsync to use /bin/sh for remote connection, but we pipe its I/O
-		"--numeric-ids", // Commonly used with --server
-		"--inplace",     // Example option, remove if not desired
-	}
-	// The client communicates with --server --sender
-	localRsyncArgs = append([]string{"--client"}, localRsyncArgs...)
-	localRsyncCmd := exec.Command("rsync", localRsyncArgs...)
-	logger.Debugf("Starting local rsync client (L->R): rsync %v", localRsyncArgs)
-
-	// Connect local rsync's stdout to remote session's stdin
-	localRsyncCmd.Stdout = remoteStdin
-	// Connect remote session's stdout to local rsync's stdin
-	localRsyncCmd.Stdin = remoteStdout
-	// Local rsync's stderr should go to our local stderr
-	localRsyncCmd.Stderr = os.Stderr
+	cmd.Stderr = os.Stderr
 
 	var wg sync.WaitGroup
-	wg.Add(2)
-	var localErr, remoteErr error
+	wg.Add(1)
+	var localErr error
 
 	// Run the local rsync client
 	go func() {
 		defer wg.Done()
-		localErr = localRsyncCmd.Run()
-		if localErr != nil {
-			logger.Errorf("Local rsync client (L->R) failed: %v", localErr)
+		out, err := cmd.Output()
+		if err != nil {
+			logger.Errorf("Running local to remote rsync failed: %v", err)
 		}
-		// Closing the remoteStdin pipe signals EOF to the remote rsync server.
-		remoteStdin.Close()
-	}()
-
-	// Wait for the remote rsync server to exit
-	go func() {
-		defer wg.Done()
-		remoteErr = remoteSession.Wait()
-		if remoteErr != nil {
-			logger.Errorf("Remote rsync server (L->R) failed: %v", remoteErr)
-		}
+		logger.Infof("Rsync output: %s", out)
 	}()
 
 	wg.Wait()
 
 	if localErr != nil {
-		return fmt.Errorf("Local-to-Remote rsync failed on client side: %w", localErr)
-	}
-	if remoteErr != nil {
-		return fmt.Errorf("Local-to-Remote rsync failed on remote server side: %w", remoteErr)
+		return fmt.Errorf("Local-to-Remote rsync failed: %w", localErr)
 	}
 
 	logger.Infof("Local-to-Remote rsync completed successfully: '%s' -> '%s'", srcLocal, dstRemote)

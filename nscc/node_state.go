@@ -73,6 +73,12 @@ func (node *Node) GetNodeState(ctx context.Context) (NodeState, error) {
 		logger.Errorf("Failed to get job state on node %s: %v", node.Host, err)
 		return state, err
 	}
+	if jobs == nil {
+		logger.Warnf("No jobs found for user on node %s", node.Host)
+		return state, nil
+	}
+
+	logger.Infof("Successfully fetched %d jobs from qstat on node %s", len(jobs), node.Host)
 	jobStates := make([]JobState, 0, len(jobs))
 	for _, job := range jobs {
 		jobStates = append(jobStates, JobState{

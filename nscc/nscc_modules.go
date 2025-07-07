@@ -2,12 +2,17 @@ package nscc
 
 import (
 	"ai-commons/config"
+	"ai-commons/utils"
+	"context"
 	"strings"
-
-	"golang.org/x/crypto/ssh"
 )
 
-func AddNSCCModules(conn *ssh.Client) error {
+func (node *Node) AddNSCCModules(ctx context.Context) error {
+	logger, err := utils.GetLoggerFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
 	modules := config.GetConfig().NSCC.RequiredModules
 	if len(modules) == 0 {
 		return nil // No modules to add
@@ -19,14 +24,11 @@ func AddNSCCModules(conn *ssh.Client) error {
 		}
 		cmd = append(cmd, "module load "+module)
 	}
+	cmd = append(cmd, "module list")
 
-	session, err := conn.NewSession()
+	err = utils.RunCommand(ctx, strings.Join(cmd, " && "), node.Conn)
 	if err != nil {
-		return err
-	}
-	defer session.Close()
-
-	if err := session.Run(strings.Join(cmd, " && ")); err != nil {
+		logger.Errorf("Failed to add NSCC modules: %v", err)
 		return err
 	}
 
