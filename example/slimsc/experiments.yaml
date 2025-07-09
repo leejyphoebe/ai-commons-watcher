@@ -1,0 +1,27 @@
+jobs:
+  - name_prefix: "test_batch_size_long_init" # Unique name for this experiment run
+    model_path: "/models/r1-distill"
+    server:
+      sif_image_path: "/home/users/ntu/$USER/scratch/sif_images/vllm_slimsc.sif"
+      tensor_parallel_size: 2
+      hours: 1
+      enable_reasoning: true
+      reasoning_parser: "deepseek_r1"
+    client:
+      hours: 1
+      gpus: 1
+      initial_delay_minutes: 1
+      sif_image_path: "/home/users/ntu/$USER/scratch/sif_images/slimsc.sif"
+    eval:
+      type: "similarity"
+      n_start: 2
+      threshold: 0.60
+      pruning_strategy: "fewest_thoughts"
+      model_name: "R1-Distill-Qwen-14B" # Unique name for outputs
+      model_identifier: "/models/r1-distill"
+      tokenizer_path: "/models/r1-distill"
+      dataset_name: "gpqa_diamond"
+      num_qns: 4
+      seed: 42
+      batch_size: 2
+      batch_num: 1

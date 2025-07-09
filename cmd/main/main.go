@@ -1,61 +1,33 @@
 package main
 
 import (
-	"ai-commons/config"
-	"ai-commons/nscc"
-	"ai-commons/utils"
-	"context"
-	"flag"
 	"fmt"
 	"os"
 
-	log "github.com/sirupsen/logrus"
+	"ai-commons/cli"
+
+	"github.com/joho/godotenv"
+	"github.com/spf13/cobra"
 )
 
+// rootCmd represents the base command when called without any subcommands
+var rootCmd = &cobra.Command{
+	Use:   "ai-commons",
+	Short: "AI Commons CLI",
+	Long:  `A command line interface for submitting and managing AI jobs on the NSCC cluster.`,
+}
+
 func main() {
-	// Parse command line flags
-	var (
-		configFilePath string
-	)
-
-	flag.StringVar(&configFilePath, "config", "config.yaml", "Path to the configuration file")
-	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "  %s [options]\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "Options:\n")
-		flag.PrintDefaults()
-	}
-	flag.Parse()
-
-	// Load configuration
-	err := config.InitConfig(configFilePath)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "FATAL: Failed to load configuration: %v\n", err)
+	godotenv.Load(".env")
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Println(err)
 		os.Exit(1)
 	}
+}
 
-	// Initialize logger
-	if err := utils.InitLogger(); err != nil {
-		log.Fatalf("Failed to initialize logger: %v", err)
-		os.Exit(1)
-	}
-
-	logger := utils.GetBaseLogger().WithField("component", "main")
-	logger.Info("Starting ai-commons...")
-
-	// handle signals for graceful shutdown
-
-	// run submit job commands in login node
-	ctx := context.WithValue(context.Background(), utils.LoggerContextKey, logger)
-	_, _, err = nscc.RunJobs(ctx)
-	if err != nil {
-		logger.Error("Failed to run jobs: ", err)
-		os.Exit(1)
-	}
-	logger.Info("Jobs executed successfully")
-
-	// cleanup
-
-	// write tests
-
+func init() {
+	rootCmd.AddCommand(cli.InitCmd)
+	rootCmd.AddCommand(cli.RunCmd)
+	cli.InitCmd.PersistentFlags().String("config", "", "Path to ai-commons config file.")
+	cli.RunCmd.PersistentFlags().String("config", "", "Path to ai-commons config file.")
 }

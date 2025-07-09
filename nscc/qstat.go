@@ -56,7 +56,7 @@ func parseQstatOutput(output string) ([]JobState, error) {
 	var jobs []JobState
 	for _, line := range lines[1:] { // Skip header line
 		fields := strings.Fields(line)
-		if len(fields) < 9 {
+		if len(fields) < 9 || len(fields) > 9 || strings.Contains(fields[0], "---") {
 			continue // Skip invalid lines
 		}
 		job := JobState{

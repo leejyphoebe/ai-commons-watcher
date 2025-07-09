@@ -1,0 +1,65 @@
+cache_dir: "$HOME/.ai-commons"
+nscc_usage_cache_file_path: "$HOME/.ai-commons/nscc_usage.csv"
+node_state_file: "$HOME/.ai-commons/nodes_state.yaml"
+
+logging:
+  file: ""
+  level: INFO
+  json: false
+  stdout: true
+ssh:
+  hostname: "aspire2antu.nscc.sg"
+  config_path: "$HOME/.ai-commons/ssh_config"
+  keys_path: "$HOME/.ssh"
+  known_hosts_path: "$HOME/.ai-commons/known_hosts"
+bitwarden:
+  api_url: "https://api.bitwarden.eu"
+  identity_url: "https://identity.bitwarden.eu"
+  state_file: "$HOME/.ai-commons/state"
+
+experiments:
+  - name: "slimsc"
+    nodes:
+      - host: silv0011
+        experiment_config_paths:
+          - src: "experiments.yaml"
+            dest: "experiments_1.yaml"
+            command: |
+              module add python/3.10.9 && \
+              source slimsc/.env/bin/activate && \
+              python3 slimsc/prune/jobs/submit_jobs_sif.py \
+                --config slimsc/prune/jobs/experiments_1.yaml
+            # command: |
+            #   scratch="/scratch/users/ntu/$USER" && \
+            #   module add singularity && \
+            #   SINGULARITYENV_APPEND_PATH="/opt/pbs/bin" \
+            #   singularity exec \
+            #     --no-home \
+            #     --home /app/slimsc/prune \
+            #     -B /opt/pbs/bin:/opt/pbs/bin \
+            #     -B $scratch/slimsc/prune/jobs:/experiments \
+            #     -B $scratch/slimsc_logs:/app/slimsc/prune/jobs/logs \
+            #     -B $scratch/slimsc_results:/app/slimsc/prune/results \
+            #     $scratch/sif_images/slimsc.sif \
+            #     python3 /app/slimsc/prune/jobs/submit_jobs_sif.py \
+            #       --config /experiments/experiments_1.yaml
+    # experiment config directory
+    local_config_dir: "example/slimsc"
+    remote_config_dir: "/scratch/users/ntu/$USER/slimsc/prune/jobs"
+    cmd_dir: "/scratch/users/ntu/$USER"
+
+    # setup and clean up scripts
+    setup:
+      setup_files_dir: "/scratch/users/ntu/$USER/.ai-commons/setup"
+      setup_script_local_path: "example/setup.sh"
+      setup_script_remote_path: "setup.sh"
+      setup_files:
+        - src: "example/pbs/download_r1.pbs"
+          dest: "download_r1.pbs"
+        - src: "example/secret/dockerhub.env"
+          dest: "dockerhub.env"
+
+    # cleanup not implemented yet
+    cleanup:
+      cleanup_script: "example/cleanup.sh"
+      cleanup_script_remote_path: "cleanup.sh"

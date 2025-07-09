@@ -106,7 +106,8 @@ func RunJobs(ctx context.Context) (string, string, error) {
 				logger.Infof("Successfully copied experiment config from %s to %s on node %s", src, dest, node.Host)
 
 				// run command to run the experiment
-				cmd := expConfig.Command
+				cmdDir := strings.Replace(exp.CmdDir, "$USER", user, 1)
+				cmd := fmt.Sprintf("cd %s && %s", cmdDir, expConfig.Command)
 				if cmd == "" {
 					logger.Errorf("Command is not defined for experiment config %s on node %s", expConfig.Src, node.Host)
 					return "", "", fmt.Errorf("command is not defined for experiment config %s on node %s", expConfig.Src, node.Host)

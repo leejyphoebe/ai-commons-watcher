@@ -15,7 +15,6 @@ type LoggingConfig struct {
 }
 
 type SSHInitConfig struct {
-	MasterHost     string `yaml:"master_host"` // required, enter your username on nscc
 	Hostname       string `yaml:"hostname"`
 	ConfigPath     string `yaml:"config_path"`
 	KeysPath       string `yaml:"keys_path"`
@@ -40,17 +39,6 @@ type EnvConfig struct {
 	Value string `yaml:"value"` // environment variable value
 }
 
-type NsccConfig struct {
-	CopyDir         string      `yaml:"copy_dir"`         // directory to copy files to the NSCC host
-	SifImagesDir    string      `yaml:"sif_images_dir"`   // directory to store Singularity SIF images
-	ResultDir       string      `yaml:"result_dir"`       // directory to store results from NSCC
-	Model           ModelConfig `yaml:"model"`            // model configuration for NSCC
-	RequiredModules []string    `yaml:"required_modules"` // list of required modules to be installed on NSCC
-	SetupSteps      []string    `yaml:"setup_steps"`      // list of setup steps to be executed on NSCC
-	SetupScript     string      `yaml:"setup_script"`     // script to be executed on NSCC for setup
-	Envs            []EnvConfig `yaml:"envs"`             // environment variables to be set on NSCC
-}
-
 type ExperimentConfigPath struct {
 	Src     string `yaml:"src"`     // source directory for the experiment
 	Dest    string `yaml:"dest"`    // destination directory for the experiment on NSCC
@@ -62,24 +50,38 @@ type ExperimentNodeConfig struct {
 	ExperimentConfigPaths []ExperimentConfigPath `yaml:"experiment_config_paths"` // list of experiment configurations for the node
 }
 
+type SetupFile struct {
+	Src  string `yaml:"src"`
+	Dest string `yaml:"dest"`
+}
+
+type ExperimentSetup struct {
+	SetupFilesDir         string      `yaml:"setup_files_dir"`
+	SetupScriptLocalPath  string      `yaml:"setup_script_local_path"`
+	SetupScriptRemotePath string      `yaml:"setup_script_remote_path"`
+	SetupFiles            []SetupFile `yaml:"setup_files"`
+}
+type ExperimentCleanup struct {
+	CleanupScript           string `yaml:"cleanup_script"`
+	CleanupScriptRemotePath string `yaml:"cleanup_script_remote_path"`
+}
 type ExperimentsConfig struct {
-	Name                  string                 `yaml:"name"`                // name of the job
-	Nodes                 []ExperimentNodeConfig `yaml:"nodes"`               // list of nodes to run the job on
-	LocalConfigDir        string                 `yaml:"local_config_dir"`    // local directory for job configuration
-	RemoteConfigDir       string                 `yaml:"remote_config_dir"`   // remote directory for job configuration on NSCC
-	CmdDir                string                 `yaml:"cmd_dir"`             // directory where the job command is located
-	SetupScriptPath       string                 `yaml:"setup_script"`        // path to the setup script to be executed before running the job
-	RemoteSetupScriptPath string                 `yaml:"remote_setup_script"` // path to the setup script on the remote node
+	Name              string                 `yaml:"name"`              // name of the job
+	Nodes             []ExperimentNodeConfig `yaml:"nodes"`             // list of nodes to run the job on
+	LocalConfigDir    string                 `yaml:"local_config_dir"`  // local directory for job configuration
+	RemoteConfigDir   string                 `yaml:"remote_config_dir"` // remote directory for job configuration on NSCC
+	CmdDir            string                 `yaml:"cmd_dir"`           // directory where the job command is located
+	ExperimentSetup   ExperimentSetup        `yaml:"setup"`             // configuration for the experiment setup
+	ExperimentCleanup ExperimentCleanup      `yaml:"cleanup"`
 }
 
 type Config struct {
-	CacheDir               string              `yaml:"cache_dir"`
+	ConfigDir              string              `yaml:"config_dir"`
 	NsccUsageCacheFilePath string              `yaml:"nscc_usage_cache_file_path"`
 	NodeStateFilePath      string              `yaml:"node_state_file_path"`
 	SSH                    SSHInitConfig       `yaml:"ssh"`
 	Logging                LoggingConfig       `yaml:"logging"`
 	Bitwarden              BitwardenConfig     `yaml:"bitwarden"`
-	NSCC                   NsccConfig          `yaml:"nscc"`
 	Experiments            []ExperimentsConfig `yaml:"experiments"`
 }
 
@@ -116,32 +118,26 @@ func InitConfig(filePath string) error {
 	}
 
 	// Validate required fields and set defaults
-	if cfg.CacheDir == "" {
-		cfg.CacheDir = "$PWD/.cache"
+	if cfg.ConfigDir == "" {
+		cfg.ConfigDir = "$HOME/.ai-commons"
 	}
 	if cfg.NsccUsageCacheFilePath == "" {
-		cfg.NsccUsageCacheFilePath = "$PWD/.cache/nscc_usage.csv"
+		cfg.NsccUsageCacheFilePath = "$HOME/.ai-commons/nscc_usage.csv"
 	}
 	if cfg.NodeStateFilePath == "" {
-		cfg.NodeStateFilePath = "$PWD/.cache/node_state.yaml"
+		cfg.NodeStateFilePath = "$HOME/.ai-commons/node_state.yaml"
 	}
-	// if cfg.Nscc.ProjectRepo == "" {
-	// 	return fmt.Errorf("project_repo is required in the configuration")
-	// }
 	if cfg.SSH.Hostname == "" {
 		cfg.SSH.Hostname = "aspire2antu.nscc.sg"
 	}
-	if cfg.SSH.MasterHost == "" {
-		return fmt.Errorf("ssh.master_host is required in the configuration")
-	}
 	if cfg.SSH.ConfigPath == "" {
-		cfg.SSH.ConfigPath = "$PWD/.cache/ssh_config"
+		cfg.SSH.ConfigPath = "$HOME/.ai-commons/ssh_config"
 	}
 	if cfg.SSH.KeysPath == "" {
 		cfg.SSH.KeysPath = "$HOME/.ssh"
 	}
 	if cfg.SSH.KnownHostsPath == "" {
-		cfg.SSH.KnownHostsPath = "$PWD/.cache/known_hosts"
+		cfg.SSH.KnownHostsPath = "$HOME/.ai-commons/known_hosts"
 	}
 	if cfg.Bitwarden.ApiUrl == "" {
 		cfg.Bitwarden.ApiUrl = "https://api.bitwarden.eu"
@@ -150,10 +146,7 @@ func InitConfig(filePath string) error {
 		cfg.Bitwarden.IdentityUrl = "https://identity.bitwarden.eu"
 	}
 	if cfg.Bitwarden.StateFile == "" {
-		cfg.Bitwarden.StateFile = "$PWD/.cache/state"
-	}
-	if len(cfg.NSCC.RequiredModules) == 0 {
-		cfg.NSCC.RequiredModules = []string{"git", "ssh", "singularity"}
+		cfg.Bitwarden.StateFile = "$HOME/.ai-commons/bitwarden_state"
 	}
 
 	// validate experiment config
@@ -170,11 +163,14 @@ func InitConfig(filePath string) error {
 		if exp.CmdDir == "" {
 			return fmt.Errorf("experiments[%d].cmd_dir is required in the configuration", i)
 		}
-		if exp.SetupScriptPath == "" {
-			return fmt.Errorf("experiments[%d].setup_script is required in the configuration", i)
+		if exp.ExperimentSetup.SetupFilesDir == "" {
+			exp.ExperimentSetup.SetupFilesDir = "/scratch/users/ntu/$USER/.ai-commons/setup"
 		}
-		if exp.RemoteSetupScriptPath == "" {
-			return fmt.Errorf("experiments[%d].remote_setup_script is required in the configuration", i)
+		if exp.ExperimentSetup.SetupScriptLocalPath == "" {
+			return fmt.Errorf("experiments[%d].setup.setup_script_local_path is required in the configuration", i)
+		}
+		if exp.ExperimentSetup.SetupScriptRemotePath == "" {
+			return fmt.Errorf("experiments[%d].setup.setup_script_remote_path is required in the configuration", i)
 		}
 		// Validate each experiment config
 		for j, exp := range exp.Nodes {
@@ -200,15 +196,16 @@ func InitConfig(filePath string) error {
 	}
 
 	// Expand environment variables in paths
-	cfg.CacheDir = os.ExpandEnv(cfg.CacheDir)
+	cfg.ConfigDir = os.ExpandEnv(cfg.ConfigDir)
 	cfg.SSH.ConfigPath = os.ExpandEnv(cfg.SSH.ConfigPath)
 	cfg.SSH.KeysPath = os.ExpandEnv(cfg.SSH.KeysPath)
 	cfg.SSH.KnownHostsPath = os.ExpandEnv(cfg.SSH.KnownHostsPath)
 	cfg.Bitwarden.StateFile = os.ExpandEnv(cfg.Bitwarden.StateFile)
+	cfg.NodeStateFilePath = os.ExpandEnv(cfg.NodeStateFilePath)
 
-	// Ensure the cache directory exists
-	if err := os.MkdirAll(cfg.CacheDir, 0755); err != nil {
-		return fmt.Errorf("failed to create cache directory %s: %w", cfg.CacheDir, err)
+	// Ensure the config directory exists
+	if err := os.MkdirAll(cfg.ConfigDir, 0755); err != nil {
+		return fmt.Errorf("failed to create config directory %s: %w", cfg.ConfigDir, err)
 	}
 
 	config = cfg

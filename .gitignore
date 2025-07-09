@@ -175,3 +175,5 @@ cython_debug/
 
 # golang binary
 bin/**
+
+example/secret/

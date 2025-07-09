@@ -17,7 +17,6 @@ import (
 )
 
 func main() {
-
 	godotenv.Load(".env")
 	slackBotToken := os.Getenv("SLACK_AUTH_TOKEN")
 	channelId := os.Getenv("SLACK_CHANNEL_ID")
@@ -55,7 +54,7 @@ func main() {
 	logger := utils.GetBaseLogger().WithField("component", "main")
 	logger.Info("Starting ai-commons...")
 
-	// // init SSH keys
+	// init SSH keys
 	appendKnownHosts := true
 	writeSSHConfig := true
 	ctx := context.WithValue(context.Background(), utils.LoggerContextKey, logger)
@@ -72,9 +71,9 @@ func main() {
 	ctx = context.WithValue(ctx, utils.LoggerContextKey, logger)
 	timestamp := time.Now().Format("2006-01-02 15:04:05")
 	// records the name of the latest file
-	latestFilePath := fmt.Sprintf("%s/output/latest_myprojects.txt", cfg.CacheDir)
+	latestFilePath := fmt.Sprintf("%s/output/latest_myprojects.txt", cfg.ConfigDir)
 	// file with the latest data
-	myprojectsOutputFilepath := fmt.Sprintf("%s/output/myprojects_%s.csv", cfg.CacheDir, timestamp)
+	myprojectsOutputFilepath := fmt.Sprintf("%s/output/myprojects_%s.csv", cfg.ConfigDir, timestamp)
 	failedHosts := make([]string, 0)
 
 	for host := range sshKeys {
