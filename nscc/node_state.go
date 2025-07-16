@@ -52,7 +52,7 @@ func (node *Node) GetNodeState(ctx context.Context) (NodeState, error) {
 	// get project state
 	projects, err := node.GetProjects(ctx)
 	if err != nil {
-		logger.Errorf("Failed to get projects on node %s: %v", node.Host, err)
+		logger.Warnf("Failed to get projects on node %s: %v", node.Host, err)
 		return state, err
 	}
 	projectStates := make([]ProjectState, 0, len(projects))

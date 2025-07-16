@@ -46,7 +46,7 @@ func InitLogger() error {
 		} else {
 			fmt.Fprintf(os.Stderr, "WARNING: Failed to open log file %s: %v. Logging to stdout only.\n", logFilePath, err)
 		}
-	} 
+	}
 
 	logToStdout := config.GetConfig().Logging.Stdout
 	if logToStdout || len(writers) == 0 {
@@ -88,7 +88,7 @@ func InitLogger() error {
 	} else {
 		logger.SetFormatter(&log.TextFormatter{
 			FullTimestamp: true,
-			DisableColors: false, // Set to true if output is not a TTY (e.g., in a file or CI)
+			ForceColors:   true, // Force colors in terminal output
 		})
 	}
 
@@ -100,13 +100,13 @@ func InitLogger() error {
 
 // GetBaseLogger returns the base initialized logger.
 func GetBaseLogger() *log.Logger {
-    if logger == nil {
-        fmt.Fprintf(os.Stderr, "WARNING: GetBaseLogger called before InitLogger. Initializing default logger.\n")
-        tempLogger := log.New()
-        tempLogger.SetOutput(os.Stderr)
-        tempLogger.SetLevel(log.InfoLevel)
-        tempLogger.SetFormatter(&log.TextFormatter{FullTimestamp: true})
-        logger = tempLogger
-    }
-    return logger
+	if logger == nil {
+		fmt.Fprintf(os.Stderr, "WARNING: GetBaseLogger called before InitLogger. Initializing default logger.\n")
+		tempLogger := log.New()
+		tempLogger.SetOutput(os.Stderr)
+		tempLogger.SetLevel(log.InfoLevel)
+		tempLogger.SetFormatter(&log.TextFormatter{FullTimestamp: true})
+		logger = tempLogger
+	}
+	return logger
 }
