@@ -60,6 +60,7 @@ type ExperimentSetup struct {
 	SetupScriptLocalPath  string      `yaml:"setup_script_local_path"`
 	SetupScriptRemotePath string      `yaml:"setup_script_remote_path"`
 	SetupFiles            []SetupFile `yaml:"setup_files"`
+	SetupArgs             []string    `yaml:"setup_args"` // arguments for the setup script
 }
 type ExperimentCleanup struct {
 	CleanupScript           string `yaml:"cleanup_script"`
@@ -73,6 +74,7 @@ type ExperimentsConfig struct {
 	CmdDir            string                 `yaml:"cmd_dir"`           // directory where the job command is located
 	ExperimentSetup   ExperimentSetup        `yaml:"setup"`             // configuration for the experiment setup
 	ExperimentCleanup ExperimentCleanup      `yaml:"cleanup"`
+	GitRequired       bool                   `yaml:"git_required"` // whether git is required for the job
 }
 
 type Config struct {

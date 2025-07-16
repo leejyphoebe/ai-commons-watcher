@@ -57,7 +57,8 @@ func setupNode(ctx context.Context, exp config.ExperimentsConfig, node *Node) er
 	logger.Infof("Successfully copied setup script to node %s", node.Host)
 
 	// run setup script
-	cmd = fmt.Sprintf("bash -e %s", remoteScriptPath)
+	args := exp.ExperimentSetup.SetupArgs
+	cmd = fmt.Sprintf("bash -eu %s %s", remoteScriptPath, strings.Join(args, " "))
 	out, _, err = utils.RunCommandGetOutput(ctx, cmd, node.Conn)
 	if err != nil {
 		logger.Errorf("Failed to run setup script on node %s: %v", node.Host, err)
