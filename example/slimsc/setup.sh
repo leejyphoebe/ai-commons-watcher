@@ -8,11 +8,14 @@ sif_dir="$dir/sif_images"
 mkdir -p "logs" "$dir/slimsc_logs" "$dir/slimsc_results" "$sif_dir"
 
 # pull singularity images
-qsub $setup_dir/pull_vllm_sif.pbs $1
+echo "qsub $setup_dir/pull_vllm_sif.pbs"
+qsub $setup_dir/pull_vllm_sif.pbs
 echo "singularity pull vllm image status code: $?"
 
-qsub $setup_dir/pull_slimsc_sif.pbs $1
+echo "qsub $setup_dir/pull_slimsc_sif.pbs"
+qsub $setup_dir/pull_slimsc_sif.pbs
 echo "singularity pull slimsc image status code: $?"
 
+echo "qsub $setup_dir/download_r1.pbs"
 qsub $setup_dir/download_r1.pbs
 echo "huggingface download model status code: $?"

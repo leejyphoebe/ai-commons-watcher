@@ -9,8 +9,8 @@
 scratch_dir="/scratch/users/ntu/$USER"
 setup_dir="$scratch_dir/.ai-commons/setup"
 
-# if refresh image flag is set, remove existing image
-if [[ "$1" == "--refresh-sif" ]]; then
+# if refresh image env is set, remove existing image
+if [[ $REFRESH_SIF == 1 ]]; then
     echo "Refreshing slimsc.sif image..."
     rm $scratch_dir/sif_images/slimsc.sif
 fi

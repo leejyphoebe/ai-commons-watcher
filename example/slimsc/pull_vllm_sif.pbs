@@ -8,8 +8,8 @@
 
 scratch_dir="/scratch/users/ntu/$USER"
 
-# if refresh image flag is set, remove existing image
-if [[ "$1" == "--refresh-sif" ]]; then
+# if refresh image env is set, remove existing image
+if [[ $REFRESH_SIF == 1 ]]; then
     echo "Refreshing vllm.sif image..."
     rm $scratch_dir/sif_images/vllm.sif
 fi
