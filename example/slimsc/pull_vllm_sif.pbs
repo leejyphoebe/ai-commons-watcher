@@ -1,0 +1,26 @@
+#!/bin/bash
+#PBS -l select=1:ngpus=1
+#PBS -l walltime=01:00:00
+#PBS -j oe
+#PBS -N download_vllm_sif
+#PBS -o ./logs/download_vllm_sif.log
+#PBS -W block=true
+
+scratch_dir="/scratch/users/ntu/$USER"
+
+# if refresh image flag is set, remove existing image
+if [[ "$1" == "--refresh-sif" ]]; then
+    echo "Refreshing vllm.sif image..."
+    rm $scratch_dir/sif_images/vllm.sif
+fi
+
+# check if image exists
+if [ -f "$scratch_dir/sif_images/vllm.sif" ]; then
+    echo "vllm.sif already exists, skipping pull."
+    exit 0
+fi
+
+module load singularity
+export SINGULARITY_CACHEDIR=$scratch_dir/.singularity
+singularity pull $scratch_dir/sif_images/vllm.sif docker://broccolin/vllm-nscc-edit:latest | tee ~/logs/vllm_pull.log
+echo "vllm.sif image pulled."

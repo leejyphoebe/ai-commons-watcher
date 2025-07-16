@@ -4,6 +4,13 @@
 #PBS -j oe
 #PBS -N download_r1_distill
 #PBS -o ./logs/download_r1_distill.log
+#PBS -W block=true
+
+# check if the model directory exists
+if [ -d "/scratch/users/ntu/$USER/models/r1-distill" ]; then
+    echo "Model directory already exists, skipping download."
+    exit 0
+fi
 
 export CUDA_VISIBLE_DEVICES=0
 module load singularity

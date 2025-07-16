@@ -1,0 +1,28 @@
+#!/bin/bash
+#PBS -l select=1:ngpus=1
+#PBS -l walltime=01:00:00
+#PBS -j oe
+#PBS -N download_slimsc_sif
+#PBS -o ./logs/download_slimsc_sif.log
+#PBS -W block=true
+
+scratch_dir="/scratch/users/ntu/$USER"
+setup_dir="$scratch_dir/.ai-commons/setup"
+
+# if refresh image flag is set, remove existing image
+if [[ "$1" == "--refresh-sif" ]]; then
+    echo "Refreshing slimsc.sif image..."
+    rm $scratch_dir/sif_images/slimsc.sif
+fi
+
+# check if image exists
+if [ -f "$scratch_dir/sif_images/slimsc.sif" ]; then
+    echo "slimsc.sif already exists, skipping pull."
+    exit 0
+fi
+
+module load singularity
+export $(cat $setup_dir/dockerhub.env | xargs)
+export SINGULARITY_CACHEDIR=$scratch_dir/.singularity
+singularity pull $scratch_dir/sif_images/slimsc.sif docker://meowth16/anyrepo:slimsc
+echo "slimsc.sif image pulled."

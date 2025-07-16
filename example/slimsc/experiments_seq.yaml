@@ -1,0 +1,30 @@
+jobs:
+  - name_prefix: "r1_sc_hmmt"
+    model_path: "/home/users/ntu/$USER/scratch/r1-distill"
+    server:
+      tensor_parallel_size: 2
+      hours: 2
+      enable_reasoning: true
+      reasoning_parser: "deepseek_r1"
+    eval:
+      type: "sc_control"
+      n_start: 8
+      model_name: "R1-Distill-Qwen-14B"
+      dataset_name: "hmmt"
+      num_qns: 2
+
+  - name_prefix: "r_hmmt_t0.99_r1"
+    model_path: "/home/users/ntu/$USER/scratch/r1-distill"
+    server:
+      tensor_parallel_size: 2
+      hours: 2
+      enable_reasoning: true
+      reasoning_parser: "deepseek_r1"
+    eval:
+      type: "similarity"
+      n_start: 8
+      threshold: 0.99
+      pruning_strategy: "random"
+      model_name: "R1-Distill-Qwen-14B"
+      dataset_name: "hmmt"
+      num_qns: 2

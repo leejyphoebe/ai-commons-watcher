@@ -19,45 +19,46 @@ bitwarden:
 
 experiments:
   - name: "slimsc"
+    git_required: false
     nodes:
       - host: silv0011
         experiment_config_paths:
           - src: "experiments.yaml"
-            dest: "experiments_1.yaml"
-            command: |
-              module add python/3.10.9 && \
-              source slimsc/.env/bin/activate && \
-              python3 slimsc/prune/jobs/submit_jobs_sif.py \
-                --config slimsc/prune/jobs/experiments_1.yaml
-            # command: |
-            #   scratch="/scratch/users/ntu/$USER" && \
-            #   module add singularity && \
-            #   SINGULARITYENV_APPEND_PATH="/opt/pbs/bin" \
-            #   singularity exec \
-            #     --no-home \
-            #     --home /app/slimsc/prune \
-            #     -B /opt/pbs/bin:/opt/pbs/bin \
-            #     -B $scratch/slimsc/prune/jobs:/experiments \
-            #     -B $scratch/slimsc_logs:/app/slimsc/prune/jobs/logs \
-            #     -B $scratch/slimsc_results:/app/slimsc/prune/results \
-            #     $scratch/sif_images/slimsc.sif \
-            #     python3 /app/slimsc/prune/jobs/submit_jobs_sif.py \
-            #       --config /experiments/experiments_1.yaml
+            dest: "experiments.yaml"
+            command: bash -eu .ai-commons/setup/run_slimsc.sh /experiments/experiments.yaml
+        # TODO: add a way to override setup config per node
+      - host: iyeoh001
+        experiment_config_paths:
+          - src: "experiments.yaml"
+            dest: "experiments.yaml"
+            command: bash -eu .ai-commons/setup/run_slimsc.sh /experiments/experiments.yaml
     # experiment config directory
     local_config_dir: "example/slimsc"
-    remote_config_dir: "/scratch/users/ntu/$USER/slimsc/prune/jobs"
+    remote_config_dir: "/scratch/users/ntu/$USER/.ai-commons/experiments/slimsc"
     cmd_dir: "/scratch/users/ntu/$USER"
 
     # setup and clean up scripts
     setup:
       setup_files_dir: "/scratch/users/ntu/$USER/.ai-commons/setup"
-      setup_script_local_path: "example/setup.sh"
+      setup_script_local_path: "example/slimsc/setup.sh"
       setup_script_remote_path: "setup.sh"
+      # setup_args: # TODO: add arguments for setup script
+      #   - "--refresh-sif"
       setup_files:
+        # files used in the setup script
         - src: "example/pbs/download_r1.pbs"
           dest: "download_r1.pbs"
+        - src: "example/slimsc/pull_slimsc_sif.pbs"
+          dest: "pull_slimsc_sif.pbs"
+        - src: "example/slimsc/pull_vllm_sif.pbs"
+          dest: "pull_vllm_sif.pbs"
         - src: "example/secret/dockerhub.env"
           dest: "dockerhub.env"
+        # files used to run the experiment
+        - src: "example/slimsc/run_slimsc.sh"
+          dest: "run_slimsc.sh"
+        - src: "example/secret/secret.env"
+          dest: "secret.env"
 
     # cleanup not implemented yet
     cleanup:
