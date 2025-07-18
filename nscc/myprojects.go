@@ -547,7 +547,7 @@ func GetDailyReportString(ctx context.Context, title string, newFilePath, prevFi
 		sb.WriteString("\n")
 		sb.WriteString("🥛 *Full Credit Account")
 		if len(untouchedProjects) > 1 {
-			sb.WriteString("s*")
+			sb.WriteString("s")
 		}
 		sb.WriteString("*:\n")
 		for _, untouched := range untouchedProjects {
