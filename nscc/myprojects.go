@@ -501,9 +501,13 @@ func GetDailyReportString(ctx context.Context, title string, newFilePath, prevFi
 	// summarize projects with full credits at the end
 	untouchedProjects := make(map[string]MyProjectsSummary)
 	for _, output := range new {
-		if output.Balance == output.Grant && output.Used == 0 {
+		if output.Balance == output.Grant {
 			untouchedProjects[output.ProjectName] = output
 		}
+	}
+
+	if len(new) > 0 {
+		sb.WriteString("💸 *Accounts with Credit Usage:*\n")
 	}
 
 	i := 1
@@ -540,13 +544,14 @@ func GetDailyReportString(ctx context.Context, title string, newFilePath, prevFi
 	}
 
 	if len(untouchedProjects) > 0 {
-		sb.WriteString("🥛 Full credit account")
+		sb.WriteString("\n")
+		sb.WriteString("🥛 *Full Credit Account")
 		if len(untouchedProjects) > 1 {
-			sb.WriteString("s")
+			sb.WriteString("s*")
 		}
-		sb.WriteString(":\n")
+		sb.WriteString("*:\n")
 		for _, untouched := range untouchedProjects {
-			sb.WriteString(fmt.Sprintf("%d. %s\n", i, untouched.Username))
+			sb.WriteString(fmt.Sprintf("%d. *%s*\n", i, untouched.Username))
 			i++
 		}
 	}
