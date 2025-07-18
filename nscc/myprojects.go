@@ -460,15 +460,11 @@ func readOutputFileToMap(ctx context.Context, filePath string) (map[string]MyPro
 }
 
 // Format:
-// *<title>*
-// datetime: ...
+// 📊 *<title>*
+// 🕑 _Fetched on: <datetime>_
 //
-//  1. <username>
-//     Balance: <balance> (+/- <yesterday's_balance>)
-//     Last Updated: <last_updated>
-//  2. <username>
-//     Balance: <balance> (+/- <yesterday's_balance>)
-//     Last Updated: <last_updated>
+//  1. <username> — 🪙 <balance> (🕺/🔻 <yesterday's_balance>)
+//  2. <username> — 🪙 <balance> (🕺/🔻 <yesterday's_balance>)
 //     ...
 func GetDailyReportString(ctx context.Context, title string, newFilePath, prevFilePath string, failedHosts []string) (string, error) {
 	logger, err := utils.GetLoggerFromContext(ctx)
@@ -493,13 +489,14 @@ func GetDailyReportString(ctx context.Context, title string, newFilePath, prevFi
 	}
 
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("*%s*\n", strings.TrimSpace(title)))
+	sb.WriteString(fmt.Sprintf("📊 *%s*\n", strings.TrimSpace(title)))
 	loc, err := time.LoadLocation(tz)
 	if err != nil {
 		logger.Errorf("Error loading location: %v", err)
 		return "", fmt.Errorf("failed to load location: %v", err)
 	}
-	sb.WriteString(fmt.Sprintf("Fetched on: %s\n", time.Now().In(loc).Format(timeFormat)))
+	sb.WriteString(fmt.Sprintf("🕑 _Fetched on: %s_\n", time.Now().In(loc).Format(timeFormat)))
+	sb.WriteString("\n")
 
 	// summarize projects with full credits at the end
 	untouchedProjects := make(map[string]MyProjectsSummary)
@@ -528,8 +525,8 @@ func GetDailyReportString(ctx context.Context, title string, newFilePath, prevFi
 		}
 
 		balanceChange := int(prevOutput.Balance - newOutput.Balance)
-		sb.WriteString(fmt.Sprintf("%d. *%s*\n", i, newOutput.Username))
-		sb.WriteString(fmt.Sprintf("    🪙 Balance: %d", int(newOutput.Balance)))
+		sb.WriteString(fmt.Sprintf("%d. *%s*", i, newOutput.Username))
+		sb.WriteString(fmt.Sprintf(" — 🪙 %d", int(newOutput.Balance)))
 		if balanceChange != 0 {
 			if balanceChange > 0 {
 				sb.WriteString(fmt.Sprintf(" (🔻 %d)\n", balanceChange))
@@ -554,7 +551,8 @@ func GetDailyReportString(ctx context.Context, title string, newFilePath, prevFi
 		}
 	}
 
-	sb.WriteString(fmt.Sprintf("\n💼 Total Projects: %d\n", len(new)))
+	sb.WriteString("\n\n")
+	sb.WriteString(fmt.Sprintf("💼 Total Projects: %d\n", len(new)))
 
 	if len(new) == 0 {
 		sb.WriteString("No projects found for this run.\n")
