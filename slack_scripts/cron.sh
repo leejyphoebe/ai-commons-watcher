@@ -33,8 +33,8 @@ add_run_slackbot() {
   echo "#!/usr/bin/bash" > "$script_path"
   echo "" >> "$script_path"
   echo "title=\$1" >> "$script_path"
-  echo "export \$(cat $project_dir/.env | xargs)" >> "$script_path"
-  echo "$project_dir/bin/slack_bot --config $project_dir/config.yaml --title \"\$1\"" >> "$script_path"
+  echo "export \$(cat $project_dir/example/secret/slack.env | xargs)" >> "$script_path"
+  echo "$project_dir/bin/slack_bot --config $project_dir/example/config.yaml --title \"\$1\"" >> "$script_path"
   chmod +x "$script_path"
   echo "Created run_slackbot script at $script_path"
 }
@@ -45,7 +45,7 @@ $script_path
 cmd="$project_dir/bin/run_slackbot.sh"
 date_cmd=$(which date)
 # Ensure the logs directory exists
-mkdir -p "${project_dir}/logs"
+mkdir -p "$HOME/logs"
 add_run_slackbot
 
 # Add a cron job to run a script at 9am on weekdays and log output
