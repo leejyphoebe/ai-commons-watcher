@@ -81,6 +81,15 @@ func main() {
 		if err != nil {
 			logger.Errorf("Failed to connect to host %s: %v", host, err)
 			failedHosts = append(failedHosts, host)
+			delete(sshKeys, host) // remove failed host from sshKeys
+			// delete ssh private key file so that the next run will try to download it again
+			keyFilePath := fmt.Sprintf("%s/nscc_%s", cfg.SSH.KeysPath, host)
+			if err := os.Remove(keyFilePath); err != nil {
+				logger.Errorf("Failed to remove SSH key file %s: %v", keyFilePath, err)
+			} else {
+				logger.Infof("Removed SSH key file %s", keyFilePath)
+			}
+			// continue to next host
 			continue
 		}
 		defer conn.Close()

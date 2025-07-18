@@ -192,7 +192,8 @@ func parseMyProjectsStdout(ctx context.Context, username string, lines []string)
 		}
 
 		if strings.HasPrefix(line, "|") {
-			if currentSection == "CreditSummary" {
+			switch currentSection {
+			case "CreditSummary":
 				parts := splitTableLine(line)
 				if len(parts) < 5 {
 					return nil, fmt.Errorf("invalid credit summary line: %s, expected 5 fields", line)
@@ -213,7 +214,7 @@ func parseMyProjectsStdout(ctx context.Context, username string, lines []string)
 					Balance: values[2],
 					InDoubt: values[3],
 				}
-			} else if currentSection == "CreditUsageByType" {
+			case "CreditUsageByType":
 				parts := splitTableLine(line)
 				if len(parts) < 4 {
 					return nil, fmt.Errorf("invalid SU usage line: %s, expected 4 fields", line)
@@ -264,9 +265,10 @@ func createMyProjectSummary(ctx context.Context, project Project) (MyProjectsSum
 	}
 
 	for _, usage := range project.Usage {
-		if usage.Unit == "GPU Hour" {
+		switch usage.Unit {
+		case "GPU Hour":
 			output.GPUHour = usage.SUUsed
-		} else if usage.Unit == "CPU Hour" {
+		case "CPU Hour":
 			output.CPUHour = usage.SUUsed
 		}
 	}
@@ -320,9 +322,9 @@ func (node *Node) SaveSummaryToCsv(ctx context.Context, projects []Project, file
 	return utils.AppendToFile(ctx, filePath, sb.String(), 0644)
 }
 
-func sortOutputByBalanceAsc(outputs []MyProjectsSummary) []MyProjectsSummary {
+func sortOutputByBalanceDesc(outputs []MyProjectsSummary) []MyProjectsSummary {
 	sort.Slice(outputs[:], func(i, j int) bool {
-		return outputs[i].Balance < outputs[j].Balance
+		return outputs[i].Balance > outputs[j].Balance
 	})
 	return outputs
 }
@@ -401,7 +403,7 @@ func readOutputFileToList(ctx context.Context, filePath string) ([]MyProjectsSum
 		}
 	}
 	// Sort outputs by balance in descending order
-	outputs = sortOutputByBalanceAsc(outputs)
+	outputs = sortOutputByBalanceDesc(outputs)
 	logger.Info("Sorted outputs by balance in descending order")
 	logger.Info(outputs)
 	if len(outputs) == 0 {
@@ -443,14 +445,15 @@ func readOutputFileToMap(ctx context.Context, filePath string) (map[string]MyPro
 }
 
 // Format:
+// *<title>*
 // datetime: ...
 //
-//  1. <project_name>
-//     Used: <used>/<grant> (+/- <yesterday's_used>)
-//     Balance: <balance>
-//  2. <project_name>
-//     Used: <used>/<grant> (+/- <yesterday's_used>)
-//     Balance: <balance>
+//  1. <username>
+//     Balance: <balance> (+/- <yesterday's_balance>)
+//     Last Updated: <last_updated>
+//  2. <username>
+//     Balance: <balance> (+/- <yesterday's_balance>)
+//     Last Updated: <last_updated>
 //     ...
 func GetDailyReportString(ctx context.Context, title string, newFilePath, prevFilePath string, failedHosts []string) (string, error) {
 	logger, err := utils.GetLoggerFromContext(ctx)
@@ -476,7 +479,21 @@ func GetDailyReportString(ctx context.Context, title string, newFilePath, prevFi
 
 	var sb strings.Builder
 	sb.WriteString(fmt.Sprintf("*%s*\n", strings.TrimSpace(title)))
-	sb.WriteString(fmt.Sprintf("Datetime: %s\n", time.Now().Format(timeFormat)))
+	loc, err := time.LoadLocation("Asia/Singapore")
+	if err != nil {
+		logger.Errorf("Error loading location: %v", err)
+		return "", fmt.Errorf("failed to load location: %v", err)
+	}
+	sb.WriteString(fmt.Sprintf("Datetime: %s\n", time.Now().In(loc).Format(timeFormat)))
+
+	// summarize projects with full credits at the end
+	untouchedProjects := make(map[string]MyProjectsSummary)
+	for _, output := range new {
+		if output.Balance == output.Grant && output.Used == 0 {
+			untouchedProjects[output.ProjectName] = output
+		}
+	}
+
 	i := 1
 	prevTimestamp := time.Time{}
 	for _, newOutput := range new {
@@ -492,33 +509,33 @@ func GetDailyReportString(ctx context.Context, title string, newFilePath, prevFi
 			}
 		}
 
-		usedChange := newOutput.Used - prevOutput.Used
-		gpuHourChange := newOutput.GPUHour - prevOutput.GPUHour
-		sb.WriteString(fmt.Sprintf("%d. *%s* (%s) as of %s\n", i, newOutput.ProjectName, newOutput.Username, newOutput.LastUpdated.Format(timeFormat)))
-		sb.WriteString(fmt.Sprintf("    🪙 Balance: %.3f (%.3f%% Remaining)\n", newOutput.Balance, 100*(newOutput.Balance/newOutput.Grant)))
-		sb.WriteString(fmt.Sprintf("    ➗ Used: %.3f/%.3f", newOutput.Used, newOutput.Grant))
-		if usedChange != 0 {
-			if usedChange > 0 {
-				sb.WriteString(fmt.Sprintf(" (+%.3f)\n", usedChange))
+		balanceChange := int(prevOutput.Balance - newOutput.Balance)
+		sb.WriteString(fmt.Sprintf("%d. *%s*\n", i, newOutput.Username))
+		sb.WriteString(fmt.Sprintf("    🪙 Balance: %d\n", int(newOutput.Balance)))
+		if balanceChange != 0 {
+			if balanceChange > 0 {
+				sb.WriteString(fmt.Sprintf(" (🔻 %d)\n", balanceChange))
 			} else {
-				sb.WriteString(fmt.Sprintf(" (%.3f)\n", usedChange))
+				sb.WriteString(fmt.Sprintf(" (:gopher_dance: %d)\n", balanceChange))
 			}
 		} else {
 			sb.WriteString("\n")
 		}
-		sb.WriteString(fmt.Sprintf("    ⌛ Total GPU Hour: %.3f", newOutput.GPUHour))
-		if gpuHourChange != 0 {
-			if gpuHourChange > 0 {
-				sb.WriteString(fmt.Sprintf(" (+%.3f)\n", gpuHourChange))
-			} else {
-				sb.WriteString(fmt.Sprintf(" (%.3f)\n", gpuHourChange))
-			}
-		} else {
-			sb.WriteString("\n")
-		}
+		sb.WriteString(fmt.Sprintf("    🕑 Last Updated: %s\n", newOutput.LastUpdated.Format(timeFormat)))
 		i++
 	}
-	sb.WriteString(fmt.Sprintf("Total Projects: %d\n", len(new)))
+	sb.WriteString(fmt.Sprintf("\n💼 Total Projects: %d\n", len(new)))
+
+	if len(untouchedProjects) > 0 {
+		sb.WriteString("🥛 Full credit account")
+		if len(untouchedProjects) > 1 {
+			sb.WriteString("s")
+		}
+		sb.WriteString(":\n")
+		for _, untouched := range untouchedProjects {
+			sb.WriteString(fmt.Sprintf("- %s\n", untouched.Username))
+		}
+	}
 
 	if len(new) == 0 {
 		sb.WriteString("No projects found for this run.\n")
@@ -530,12 +547,10 @@ func GetDailyReportString(ctx context.Context, title string, newFilePath, prevFi
 		sb.WriteString("No data available for the daily report.\n")
 	}
 	if len(failedHosts) > 0 {
-		sb.WriteString("Failed to connect to the following accounts:\n")
+		sb.WriteString("🛑 Failed to connect to the following accounts:\n")
 		for _, host := range failedHosts {
 			sb.WriteString(fmt.Sprintf("- %s\n", host))
 		}
-	} else {
-		sb.WriteString("All NSCC accounts connected successfully.\n")
 	}
 	logger.Debugf("Generated daily report:\n%s", sb.String())
 	// Return the report as a string
