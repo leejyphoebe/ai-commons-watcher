@@ -46,6 +46,7 @@ type MyProjectsSummary struct {
 	CPUHour     float64
 }
 
+var tz = "Asia/Singapore"
 var timeFormat = "2006-01-02 15:04:05"
 
 func (node *Node) GetProjects(ctx context.Context) ([]Project, error) {
@@ -55,7 +56,13 @@ func (node *Node) GetProjects(ctx context.Context) ([]Project, error) {
 		return nil, fmt.Errorf("failed to retrieve logger from context: %v", err)
 	}
 
-	timestamp := time.Now().Format(timeFormat)
+	timezone, err := time.LoadLocation(tz)
+	if err != nil {
+		logger.Errorf("Failed to load timezone %s: %v", tz, err)
+		return nil, fmt.Errorf("failed to load timezone %s: %v", tz, err)
+	}
+	logger.Infof("Using timezone: %s", timezone)
+	timestamp := time.Now().In(timezone).Format(timeFormat)
 	logger.Infof("Generating daily report for %s", timestamp)
 
 	// run myprojects to check credits
@@ -253,6 +260,14 @@ func createMyProjectSummary(ctx context.Context, project Project) (MyProjectsSum
 		return MyProjectsSummary{}, fmt.Errorf("project %s has no usage data", project.Name)
 	}
 
+	timezone, err := time.LoadLocation(tz)
+	if err != nil {
+		logger.Errorf("Failed to load timezone %s: %v", tz, err)
+		return MyProjectsSummary{}, fmt.Errorf("failed to load timezone %s: %v", tz, err)
+	}
+	logger.Infof("Using timezone: %s", timezone)
+	timestamp := time.Now().In(timezone)
+
 	output := MyProjectsSummary{
 		Username:    project.Username,
 		ProjectName: project.Name,
@@ -261,7 +276,7 @@ func createMyProjectSummary(ctx context.Context, project Project) (MyProjectsSum
 		Balance:     project.CreditSummary.Balance,
 		InDoubt:     project.CreditSummary.InDoubt,
 		LastUpdated: project.LastUpdated,
-		Timestamp:   time.Now(), // Set the current timestamp
+		Timestamp:   timestamp, // Set the current timestamp
 	}
 
 	for _, usage := range project.Usage {
@@ -479,12 +494,12 @@ func GetDailyReportString(ctx context.Context, title string, newFilePath, prevFi
 
 	var sb strings.Builder
 	sb.WriteString(fmt.Sprintf("*%s*\n", strings.TrimSpace(title)))
-	loc, err := time.LoadLocation("Asia/Singapore")
+	loc, err := time.LoadLocation(tz)
 	if err != nil {
 		logger.Errorf("Error loading location: %v", err)
 		return "", fmt.Errorf("failed to load location: %v", err)
 	}
-	sb.WriteString(fmt.Sprintf("Datetime: %s\n", time.Now().In(loc).Format(timeFormat)))
+	sb.WriteString(fmt.Sprintf("Fetched on: %s\n", time.Now().In(loc).Format(timeFormat)))
 
 	// summarize projects with full credits at the end
 	untouchedProjects := make(map[string]MyProjectsSummary)
@@ -497,6 +512,9 @@ func GetDailyReportString(ctx context.Context, title string, newFilePath, prevFi
 	i := 1
 	prevTimestamp := time.Time{}
 	for _, newOutput := range new {
+		if newOutput.Balance == 0 && newOutput.Used == 0 {
+			continue // Skip projects with no balance or usage
+		}
 		prevOutput, exists := prev[newOutput.ProjectName]
 		if !exists {
 			prevOutput = MyProjectsSummary{}
@@ -511,7 +529,7 @@ func GetDailyReportString(ctx context.Context, title string, newFilePath, prevFi
 
 		balanceChange := int(prevOutput.Balance - newOutput.Balance)
 		sb.WriteString(fmt.Sprintf("%d. *%s*\n", i, newOutput.Username))
-		sb.WriteString(fmt.Sprintf("    🪙 Balance: %d\n", int(newOutput.Balance)))
+		sb.WriteString(fmt.Sprintf("    🪙 Balance: %d", int(newOutput.Balance)))
 		if balanceChange != 0 {
 			if balanceChange > 0 {
 				sb.WriteString(fmt.Sprintf(" (🔻 %d)\n", balanceChange))
@@ -521,7 +539,6 @@ func GetDailyReportString(ctx context.Context, title string, newFilePath, prevFi
 		} else {
 			sb.WriteString("\n")
 		}
-		sb.WriteString(fmt.Sprintf("    🕑 Last Updated: %s\n", newOutput.LastUpdated.Format(timeFormat)))
 		i++
 	}
 	sb.WriteString(fmt.Sprintf("\n💼 Total Projects: %d\n", len(new)))
@@ -533,7 +550,7 @@ func GetDailyReportString(ctx context.Context, title string, newFilePath, prevFi
 		}
 		sb.WriteString(":\n")
 		for _, untouched := range untouchedProjects {
-			sb.WriteString(fmt.Sprintf("- %s\n", untouched.Username))
+			sb.WriteString(fmt.Sprintf("    - %s\n", untouched.Username))
 		}
 	}
 
@@ -549,7 +566,7 @@ func GetDailyReportString(ctx context.Context, title string, newFilePath, prevFi
 	if len(failedHosts) > 0 {
 		sb.WriteString("🛑 Failed to connect to the following accounts:\n")
 		for _, host := range failedHosts {
-			sb.WriteString(fmt.Sprintf("- %s\n", host))
+			sb.WriteString(fmt.Sprintf("    - %s\n", host))
 		}
 	}
 	logger.Debugf("Generated daily report:\n%s", sb.String())
