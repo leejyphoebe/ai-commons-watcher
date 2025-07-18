@@ -512,7 +512,7 @@ func GetDailyReportString(ctx context.Context, title string, newFilePath, prevFi
 	i := 1
 	prevTimestamp := time.Time{}
 	for _, newOutput := range new {
-		if newOutput.Balance == 0 && newOutput.Used == 0 {
+		if newOutput.Balance == 0 || newOutput.Used == 0 {
 			continue // Skip projects with no balance or usage
 		}
 		prevOutput, exists := prev[newOutput.ProjectName]
@@ -541,7 +541,6 @@ func GetDailyReportString(ctx context.Context, title string, newFilePath, prevFi
 		}
 		i++
 	}
-	sb.WriteString(fmt.Sprintf("\n💼 Total Projects: %d\n", len(new)))
 
 	if len(untouchedProjects) > 0 {
 		sb.WriteString("🥛 Full credit account")
@@ -550,9 +549,12 @@ func GetDailyReportString(ctx context.Context, title string, newFilePath, prevFi
 		}
 		sb.WriteString(":\n")
 		for _, untouched := range untouchedProjects {
-			sb.WriteString(fmt.Sprintf("    - %s\n", untouched.Username))
+			sb.WriteString(fmt.Sprintf("%d. %s\n", i, untouched.Username))
+			i++
 		}
 	}
+
+	sb.WriteString(fmt.Sprintf("\n💼 Total Projects: %d\n", len(new)))
 
 	if len(new) == 0 {
 		sb.WriteString("No projects found for this run.\n")
