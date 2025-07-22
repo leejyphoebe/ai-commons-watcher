@@ -4,6 +4,7 @@ import (
 	"ai-commons/utils"
 	"context"
 	"fmt"
+	"math"
 	"sort"
 	"strconv"
 	"strings"
@@ -538,29 +539,18 @@ func GetDailyReportString(ctx context.Context, title string, newFilePath, prevFi
 
 		balanceChange := prevOutput.Balance - newOutput.Balance
 		sb.WriteString(fmt.Sprintf("%d. *%s*", i, newOutput.Username))
-		if !under1k {
-			sb.WriteString(fmt.Sprintf(" — 🪙 %.1fk", newOutput.Balance/1000))
-		} else {
-			sb.WriteString(fmt.Sprintf(" — 🪙 %.d", int(newOutput.Balance)))
-		}
+		sb.WriteString(" — 🪙 ")
+
+		sb.WriteString(utils.FormatToK(newOutput.Balance, 1, "%.1fk", "%.0f"))
 		if balanceChange != 0 {
-			if !under1k {
-				balanceChange /= 1000
-			}
-
 			if balanceChange > 0 {
-				sb.WriteString(fmt.Sprintf(" (🔻 %.2f", balanceChange))
+				sb.WriteString(" (🔻 ")
 			} else {
-				sb.WriteString(fmt.Sprintf(" (:gopher_dance: %.2f", balanceChange*-1))
+				sb.WriteString(" (:gopher_dance: ")
 			}
-
-			if !under1k {
-				sb.WriteString("k)")
-			}
-			sb.WriteString(")\n")
-		} else {
-			sb.WriteString("\n")
+			sb.WriteString(utils.FormatToK(math.Abs(balanceChange), 1, "%.1fk)", "%.0f)"))
 		}
+		sb.WriteString("\n")
 		i++
 	}
 
