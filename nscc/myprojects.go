@@ -510,6 +510,8 @@ func GetDailyReportString(ctx context.Context, title string, newFilePath, prevFi
 		sb.WriteString("💸 *Accounts with Credit Usage:*\n")
 	}
 
+	under1k := false
+
 	i := 1
 	prevTimestamp := time.Time{}
 	for _, newOutput := range new {
@@ -528,15 +530,34 @@ func GetDailyReportString(ctx context.Context, title string, newFilePath, prevFi
 			}
 		}
 
-		balanceChange := int(prevOutput.Balance - newOutput.Balance)
+		if newOutput.Balance < 1000 && !under1k {
+			under1k = true
+			sb.WriteString("\n")
+			sb.WriteString("🥀 *Accounts with Low Balance (< 1k):*\n")
+		}
+
+		balanceChange := prevOutput.Balance - newOutput.Balance
 		sb.WriteString(fmt.Sprintf("%d. *%s*", i, newOutput.Username))
-		sb.WriteString(fmt.Sprintf(" — 🪙 %d", int(newOutput.Balance)))
+		if !under1k {
+			sb.WriteString(fmt.Sprintf(" — 🪙 %.1fk", newOutput.Balance/1000))
+		} else {
+			sb.WriteString(fmt.Sprintf(" — 🪙 %.d", int(newOutput.Balance)))
+		}
 		if balanceChange != 0 {
-			if balanceChange > 0 {
-				sb.WriteString(fmt.Sprintf(" (🔻 %d)\n", balanceChange))
-			} else {
-				sb.WriteString(fmt.Sprintf(" (:gopher_dance: %d)\n", balanceChange))
+			if !under1k {
+				balanceChange /= 1000
 			}
+
+			if balanceChange > 0 {
+				sb.WriteString(fmt.Sprintf(" (🔻 %.2f", balanceChange))
+			} else {
+				sb.WriteString(fmt.Sprintf(" (:gopher_dance: %.2f", balanceChange*-1))
+			}
+
+			if !under1k {
+				sb.WriteString("k)")
+			}
+			sb.WriteString(")\n")
 		} else {
 			sb.WriteString("\n")
 		}
