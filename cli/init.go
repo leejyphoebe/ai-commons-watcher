@@ -50,7 +50,7 @@ func initApp(cmd *cobra.Command, args []string) {
 		// Create a sample configuration file
 		configFile := filepath.Join(configDir, "config.yaml")
 		sampleConfig := `config_dir: "$HOME/.ai-commons"
-node_state_file: "$HOME/.ai-commons/node_state.yaml"
+node_state_file_path: "$HOME/.ai-commons/node_state.yaml"
 logging:
   level: INFO
   file: ""

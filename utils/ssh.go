@@ -94,9 +94,9 @@ func GetConnection(ctx context.Context, host string) (*ssh.Client, error) {
 
 	attempts := 0
 	cfg := config.GetConfig()
-	sleepDuration := cfg.SSH.SleepSeconds
-	timeout := cfg.SSH.TimeoutSeconds
-	maxAttempts := cfg.SSH.MaxAttempts
+	sleepDuration := *cfg.SSH.SleepSeconds
+	timeout := *cfg.SSH.TimeoutSeconds
+	maxAttempts := *cfg.SSH.MaxAttempts
 	logger = logger.WithField("host", host)
 	logger.Infof("Attempting to connect to %s with max attempts %d", host, maxAttempts)
 	for {

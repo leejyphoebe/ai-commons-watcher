@@ -10,8 +10,8 @@ import (
 type LoggingConfig struct {
 	File   string `yaml:"file"`
 	Level  string `yaml:"level"`
-	Json   bool   `yaml:"json"`
-	Stdout bool   `yaml:"stdout"`
+	Json   *bool  `yaml:"json"`
+	Stdout *bool  `yaml:"stdout"`
 }
 
 type SSHInitConfig struct {
@@ -20,9 +20,9 @@ type SSHInitConfig struct {
 	KeysPath       string `yaml:"keys_path"`
 	KnownHostsPath string `yaml:"known_hosts_path"`
 	KeyPrefix      string `yaml:"key_prefix"`      // prefix for SSH keys on bitwarden and downloaded keys, e.g., "nscc_"
-	MaxAttempts    int    `yaml:"max_attempts"`    // maximum attempts to connect to SSH host
-	SleepSeconds   int    `yaml:"sleep_seconds"`   // seconds to sleep between connection attempts
-	TimeoutSeconds int    `yaml:"timeout_seconds"` // timeout for SSH connection in seconds
+	MaxAttempts    *int   `yaml:"max_attempts"`    // maximum attempts to connect to SSH host
+	SleepSeconds   *int   `yaml:"sleep_seconds"`   // seconds to sleep between connection attempts
+	TimeoutSeconds *int   `yaml:"timeout_seconds"` // timeout for SSH connection in seconds
 }
 
 type BitwardenConfig struct {
@@ -83,7 +83,7 @@ type ExperimentsConfig struct {
 
 type Config struct {
 	ConfigDir         string              `yaml:"config_dir"`
-	NodeStateFilePath string              `yaml:"node_state_file_path"`
+	NodeStateFilePath string              `yaml:"node_state_file"`
 	SSH               SSHInitConfig       `yaml:"ssh"`
 	Logging           LoggingConfig       `yaml:"logging"`
 	Bitwarden         BitwardenConfig     `yaml:"bitwarden"`
@@ -129,6 +129,21 @@ func InitConfig(filePath string) error {
 	if cfg.NodeStateFilePath == "" {
 		cfg.NodeStateFilePath = "$HOME/.ai-commons/node_state.yaml"
 	}
+	if cfg.Logging.Level == "" {
+		cfg.Logging.Level = "INFO"
+	}
+	if cfg.Logging.File == "" && cfg.Logging.Stdout == nil {
+		cfg.Logging.Stdout = new(bool)
+		*cfg.Logging.Stdout = true // default to stdout if no file is specified
+	}
+	if cfg.Logging.Stdout == nil {
+		cfg.Logging.Stdout = new(bool)
+		*cfg.Logging.Stdout = true // default to true if not specified
+	}
+	if cfg.Logging.Json == nil {
+		cfg.Logging.Json = new(bool)
+		*cfg.Logging.Json = false // default to false if not specified
+	}
 	if cfg.SSH.Hostname == "" {
 		cfg.SSH.Hostname = "aspire2antu.nscc.sg"
 	}
@@ -140,6 +155,21 @@ func InitConfig(filePath string) error {
 	}
 	if cfg.SSH.KnownHostsPath == "" {
 		cfg.SSH.KnownHostsPath = "$HOME/.ai-commons/known_hosts"
+	}
+	if cfg.SSH.KeyPrefix == "" {
+		cfg.SSH.KeyPrefix = "nscc_"
+	}
+	if cfg.SSH.MaxAttempts == nil {
+		cfg.SSH.MaxAttempts = new(int)
+		*cfg.SSH.MaxAttempts = 1 // default to 1 if not specified
+	}
+	if cfg.SSH.SleepSeconds == nil {
+		cfg.SSH.SleepSeconds = new(int)
+		*cfg.SSH.SleepSeconds = 0 // default to 0 seconds if not specified
+	}
+	if cfg.SSH.TimeoutSeconds == nil {
+		cfg.SSH.TimeoutSeconds = new(int)
+		*cfg.SSH.TimeoutSeconds = 30 // default to 30 seconds if not specified
 	}
 	if cfg.Bitwarden.ApiUrl == "" {
 		cfg.Bitwarden.ApiUrl = "https://api.bitwarden.eu"

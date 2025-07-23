@@ -48,7 +48,7 @@ func InitLogger() error {
 		}
 	}
 
-	logToStdout := config.GetConfig().Logging.Stdout
+	logToStdout := *config.GetConfig().Logging.Stdout
 	if logToStdout || len(writers) == 0 {
 		// If logToStdout is true or no file writer was added, log to stdout
 		writers = append(writers, os.Stdout)
@@ -71,7 +71,7 @@ func InitLogger() error {
 	}
 
 	isJSON := config.GetConfig().Logging.Json
-	if isJSON {
+	if *isJSON {
 		fmt.Println("Logging in JSON format.")
 	} else {
 		fmt.Println("Logging in text format.")
@@ -81,7 +81,7 @@ func InitLogger() error {
 	logger.SetLevel(level)
 
 	// Set the formatter
-	if isJSON {
+	if *isJSON {
 		logger.SetFormatter(&log.JSONFormatter{
 			TimestampFormat: time.RFC3339Nano, // High precision timestamp
 		})

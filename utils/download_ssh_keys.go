@@ -166,7 +166,7 @@ func GetSSHKey(client *sdk.BitwardenClientInterface, secretId string) (string, e
 
 func CheckIfSSHKeyExists(saveDir, keyPrefix, key string) (bool, error) {
 	// Construct the file path for the SSH key
-	filePath := fmt.Sprintf("%s/%s%s", saveDir, keyPrefix, key[8:]) // Remove "ssh_key_" prefix
+	filePath := fmt.Sprintf("%s/%s", saveDir, key)
 
 	// Check if the file exists
 	_, err := os.Stat(filePath)
@@ -204,7 +204,7 @@ func DownloadSSHKey(ctx context.Context, client *sdk.BitwardenClientInterface, k
 	}
 
 	// Construct the file path for the SSH key
-	filePath := fmt.Sprintf("%s/%s%s", saveDir, keyPrefix, keyName[8:]) // Remove "ssh_key_" prefix
+	filePath := fmt.Sprintf("%s/%s", saveDir, keyName)
 	// check if the SSH key already exists
 	exists, err := CheckIfSSHKeyExists(saveDir, keyPrefix, keyName)
 	if err != nil {
@@ -281,7 +281,8 @@ func DownloadSSHKeys(ctx context.Context, client *sdk.BitwardenClientInterface, 
 		if err != nil {
 			return nil, fmt.Errorf("failed to download SSH key %s: %v", key, err)
 		}
-		sshKeysMap[key[8:]] = sshKeyLocation
+		keyWithoutPrefix := strings.TrimPrefix(key, keyPrefix) // Remove the prefix from the key
+		sshKeysMap[keyWithoutPrefix] = sshKeyLocation
 	}
 
 	return sshKeysMap, nil
@@ -328,7 +329,7 @@ func AppendSSHConfig(ctx context.Context, configFilePath, hostname, user, identi
 
 	// Write the SSH configuration if config doesnt exist in file
 	cfg := config.GetConfig()
-	_, err = LoadSSHConfig(ctx, user, cfg.SSH.TimeoutSeconds)
+	_, err = LoadSSHConfig(ctx, user, *cfg.SSH.TimeoutSeconds)
 	if err == nil {
 		logger.Infof("SSH config for alias %s already exists in %s, skipping append\n", user, configFilePath)
 		return nil // Skip if the config already exists
