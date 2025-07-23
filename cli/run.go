@@ -45,10 +45,18 @@ func runExperiments(cmd *cobra.Command, args []string) {
 	logger.Infof("Running experiments from '%s' config file\n", configFlag)
 
 	ctx := context.WithValue(context.Background(), utils.LoggerContextKey, logger)
-	_, _, err := nscc.RunJobs(ctx)
-	if err != nil {
-		logger.Errorf("Failed to run jobs: %v", err)
-		os.Exit(1)
+	cfg := config.GetConfig()
+
+	switch cfg.SSH.Hostname {
+	case nscc.NSCCHostname:
+		logger.Infof("Running on NSCC hostname: %s", nscc.NSCCHostname)
+		err := nscc.RunJobs(ctx)
+		if err != nil {
+			logger.Errorf("Failed to run jobs: %v", err)
+			os.Exit(1)
+		}
+		logger.Info("Jobs executed successfully.")
+	default:
+		logger.Infof("Running on custom hostname: %s", cfg.SSH.Hostname)
 	}
-	logger.Info("Jobs executed successfully.")
 }

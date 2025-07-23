@@ -31,18 +31,6 @@ type BitwardenConfig struct {
 	StateFile   string `yaml:"state_file"`
 }
 
-type ModelConfig struct {
-	Name    string `yaml:"name"`    // name of the model
-	Version string `yaml:"version"` // version of the model
-	Source  string `yaml:"source"`  // source of the model, e.g., "huggingface", "local", etc.
-	Dir     string `yaml:"dir"`     // directory where the model is stored
-}
-
-type EnvConfig struct {
-	Key   string `yaml:"key"`   // environment variable key
-	Value string `yaml:"value"` // environment variable value
-}
-
 type ExperimentConfigPath struct {
 	Src     string `yaml:"src"`     // source directory for the experiment
 	Dest    string `yaml:"dest"`    // destination directory for the experiment on NSCC
@@ -185,6 +173,12 @@ func InitConfig(filePath string) error {
 	for i, exp := range cfg.Experiments {
 		if exp.Name == "" {
 			return fmt.Errorf("experiments[%d].name is required in the configuration", i)
+		}
+		if exp.GitRequired && len(exp.Nodes) == 0 {
+			return fmt.Errorf("experiments[%d] requires git but no nodes are specified", i)
+		}
+		if len(exp.Nodes) == 0 {
+			return fmt.Errorf("experiments[%d].nodes is required in the configuration", i)
 		}
 		if exp.LocalConfigDir == "" {
 			return fmt.Errorf("experiments[%d].local_config_dir is required in the configuration", i)

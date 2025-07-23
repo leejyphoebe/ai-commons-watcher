@@ -4,11 +4,15 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+var NSCCHostname = "aspire2antu.nscc.sg"
+
+// Note: not NSCC specific
 type Node struct {
 	Host string
 	Conn *ssh.Client
 }
 
+// NSCC specific
 type NodeStates struct {
 	Nodes map[string]NodeState `yaml:"nodes"`
 }
