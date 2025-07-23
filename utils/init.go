@@ -65,17 +65,19 @@ func InitSSHKeys(ctx context.Context, hostname string, appendKnownHosts, appendS
 		sshConfigPath := cfg.SSH.ConfigPath
 
 		// check if ssh config file exists, if yes, skip
-		if _, err := os.Stat(sshConfigPath); err == nil {
+		_, err := os.Stat(sshConfigPath)
+		if err == nil {
 			logger.Infof("SSH config file %s already exists, skipping creation", sshConfigPath)
-			return sshKeys, nil
 		} else if !os.IsNotExist(err) {
 			logger.Error("Failed to check SSH config file: ", err)
 			return nil, fmt.Errorf("failed to check SSH config file: %v", err)
 		}
 
-		if err := CreateDirFileIfNotExists(sshConfigPath); err != nil {
-			logger.Error("Failed to create SSH config directory: ", err)
-			return nil, fmt.Errorf("failed to create SSH config directory: %v", err)
+		if os.IsNotExist(err) {
+			if err := CreateDirFileIfNotExists(sshConfigPath); err != nil {
+				logger.Error("Failed to create SSH config directory: ", err)
+				return nil, fmt.Errorf("failed to create SSH config directory: %v", err)
+			}
 		}
 
 		logger.Infof("Successfully created SSH config file %s", sshConfigPath)

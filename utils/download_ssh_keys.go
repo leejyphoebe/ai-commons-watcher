@@ -326,7 +326,15 @@ func AppendSSHConfig(ctx context.Context, configFilePath, hostname, user, identi
 		return fmt.Errorf("failed to check identity file %s: %v", identityFile, err)
 	}
 
-	// Write the SSH configuration
+	// Write the SSH configuration if config doesnt exist in file
+	cfg := config.GetConfig()
+	_, err = LoadSSHConfig(ctx, user, cfg.SSH.TimeoutSeconds)
+	if err == nil {
+		logger.Infof("SSH config for alias %s already exists in %s, skipping append\n", user, configFilePath)
+		return nil // Skip if the config already exists
+	}
+
+	logger.Infof("Failed to load SSH config for alias %s: %v, appending SSH config to %s\n", user, err, configFilePath)
 	configContent := fmt.Sprintf("Host %s\n\tHostName %s\n\tUser %s\n\tIdentityFile %s\n", user, hostname, user, identityFile)
 	if err := AppendToFile(ctx, configFilePath, configContent, 0644); err != nil {
 		return fmt.Errorf("failed to append SSH config for alias %s: %v", user, err)
