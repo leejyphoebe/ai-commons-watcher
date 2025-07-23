@@ -83,7 +83,7 @@ func main() {
 			failedHosts = append(failedHosts, host)
 			delete(sshKeys, host) // remove failed host from sshKeys
 			// delete ssh private key file so that the next run will try to download it again
-			keyFilePath := fmt.Sprintf("%s/nscc_%s", cfg.SSH.KeysPath, host)
+			keyFilePath := fmt.Sprintf("%s/%s%s", cfg.SSH.KeysPath, cfg.SSH.KeyPrefix, host)
 			if err := os.Remove(keyFilePath); err != nil {
 				logger.Errorf("Failed to remove SSH key file %s: %v", keyFilePath, err)
 			} else {

@@ -127,6 +127,7 @@ func RunJobs(ctx context.Context) (string, string, error) {
 		conn, err := utils.GetConnection(ctx, host)
 		if err != nil {
 			logger.Errorf("Failed to connect to host %s: %v", host, err)
+			continue
 		}
 		defer conn.Close()
 		sshConns[host] = conn

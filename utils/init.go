@@ -7,11 +7,6 @@ import (
 	"os"
 )
 
-func CheckFirstRun() bool {
-	_, err := os.Stat(".cache")
-	return os.IsNotExist(err)
-}
-
 func InitSSHKeys(ctx context.Context, hostname string, appendKnownHosts, appendSSHConfig bool) (map[string]string, error) {
 	logger, err := GetLoggerFromContext(ctx)
 	if err != nil {
@@ -30,11 +25,13 @@ func InitSSHKeys(ctx context.Context, hostname string, appendKnownHosts, appendS
 		return nil, fmt.Errorf("BITWARDEN_ORG_ID environment variable is not set")
 	}
 
+	cfg := config.GetConfig()
+
 	// Initialize Bitwarden client
 	bwClient, err := GetBitwardenClient(
 		accessToken,
-		config.GetConfig().Bitwarden.ApiUrl,
-		config.GetConfig().Bitwarden.IdentityUrl,
+		cfg.Bitwarden.ApiUrl,
+		cfg.Bitwarden.IdentityUrl,
 	)
 	if err != nil {
 		logger.Error("Failed to initialize Bitwarden client: ", err)
@@ -44,8 +41,8 @@ func InitSSHKeys(ctx context.Context, hostname string, appendKnownHosts, appendS
 	defer CloseBitwardenClient(bwClient)
 
 	// Download SSH keys from Bitwarden
-	sshDir := config.GetConfig().SSH.KeysPath
-	sshKeys, err := DownloadSSHKeys(ctx, bwClient, orgId, sshDir, true, ".cache", "nscc_")
+	sshDir := cfg.SSH.KeysPath
+	sshKeys, err := DownloadSSHKeys(ctx, bwClient, orgId, sshDir, true, cfg.ConfigDir, cfg.SSH.KeyPrefix)
 	if err != nil {
 		logger.Error("Failed to download SSH keys from Bitwarden: ", err)
 		return nil, fmt.Errorf("failed to download SSH keys from Bitwarden: %v", err)
@@ -57,7 +54,7 @@ func InitSSHKeys(ctx context.Context, hostname string, appendKnownHosts, appendS
 
 	if appendKnownHosts {
 		// append known hosts
-		err = AppendKnownHosts(ctx, hostname, config.GetConfig().SSH.KnownHostsPath)
+		err = AppendKnownHosts(ctx, hostname, cfg.SSH.KnownHostsPath)
 		if err != nil {
 			logger.Error("Failed to append known hosts: ", err)
 			return nil, fmt.Errorf("failed to append known hosts: %v", err)
@@ -65,7 +62,7 @@ func InitSSHKeys(ctx context.Context, hostname string, appendKnownHosts, appendS
 	}
 
 	if appendSSHConfig {
-		sshConfigPath := config.GetConfig().SSH.ConfigPath
+		sshConfigPath := cfg.SSH.ConfigPath
 
 		// check if ssh config file exists, if yes, skip
 		if _, err := os.Stat(sshConfigPath); err == nil {

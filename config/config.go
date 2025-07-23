@@ -19,6 +19,10 @@ type SSHInitConfig struct {
 	ConfigPath     string `yaml:"config_path"`
 	KeysPath       string `yaml:"keys_path"`
 	KnownHostsPath string `yaml:"known_hosts_path"`
+	KeyPrefix      string `yaml:"key_prefix"`      // prefix for SSH keys on bitwarden and downloaded keys, e.g., "nscc_"
+	MaxAttempts    int    `yaml:"max_attempts"`    // maximum attempts to connect to SSH host
+	SleepSeconds   int    `yaml:"sleep_seconds"`   // seconds to sleep between connection attempts
+	TimeoutSeconds int    `yaml:"timeout_seconds"` // timeout for SSH connection in seconds
 }
 
 type BitwardenConfig struct {
@@ -78,13 +82,12 @@ type ExperimentsConfig struct {
 }
 
 type Config struct {
-	ConfigDir              string              `yaml:"config_dir"`
-	NsccUsageCacheFilePath string              `yaml:"nscc_usage_cache_file_path"`
-	NodeStateFilePath      string              `yaml:"node_state_file_path"`
-	SSH                    SSHInitConfig       `yaml:"ssh"`
-	Logging                LoggingConfig       `yaml:"logging"`
-	Bitwarden              BitwardenConfig     `yaml:"bitwarden"`
-	Experiments            []ExperimentsConfig `yaml:"experiments"`
+	ConfigDir         string              `yaml:"config_dir"`
+	NodeStateFilePath string              `yaml:"node_state_file_path"`
+	SSH               SSHInitConfig       `yaml:"ssh"`
+	Logging           LoggingConfig       `yaml:"logging"`
+	Bitwarden         BitwardenConfig     `yaml:"bitwarden"`
+	Experiments       []ExperimentsConfig `yaml:"experiments"`
 }
 
 var config *Config
@@ -122,9 +125,6 @@ func InitConfig(filePath string) error {
 	// Validate required fields and set defaults
 	if cfg.ConfigDir == "" {
 		cfg.ConfigDir = "$HOME/.ai-commons"
-	}
-	if cfg.NsccUsageCacheFilePath == "" {
-		cfg.NsccUsageCacheFilePath = "$HOME/.ai-commons/nscc_usage.csv"
 	}
 	if cfg.NodeStateFilePath == "" {
 		cfg.NodeStateFilePath = "$HOME/.ai-commons/node_state.yaml"

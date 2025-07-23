@@ -1,5 +1,4 @@
-cache_dir: "$HOME/.ai-commons"
-nscc_usage_cache_file_path: "$HOME/.ai-commons/nscc_usage.csv"
+config_dir: "$HOME/.ai-commons"
 node_state_file: "$HOME/.ai-commons/nodes_state.yaml"
 
 logging:
@@ -12,6 +11,10 @@ ssh:
   config_path: "$HOME/.ai-commons/ssh_config"
   keys_path: "$HOME/.ssh"
   known_hosts_path: "$HOME/.ai-commons/known_hosts"
+  key_prefix: "nscc_"
+  max_attempts: 3
+  sleep_seconds: 5
+  timeout_seconds: 30
 bitwarden:
   api_url: "https://api.bitwarden.eu"
   identity_url: "https://identity.bitwarden.eu"

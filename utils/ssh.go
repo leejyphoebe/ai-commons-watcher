@@ -26,7 +26,7 @@ func hostKeyCallback() (ssh.HostKeyCallback, error) {
 	return callback, nil
 }
 
-func LoadSSHConfig(ctx context.Context, host string) (*ssh.ClientConfig, error) {
+func LoadSSHConfig(ctx context.Context, host string, timeout int) (*ssh.ClientConfig, error) {
 	// Get the logger from the context
 	logger, err := GetLoggerFromContext(ctx)
 	if err != nil {
@@ -80,7 +80,7 @@ func LoadSSHConfig(ctx context.Context, host string) (*ssh.ClientConfig, error) 
 			ssh.PublicKeys(key),
 		},
 		HostKeyCallback: hostKeyCallback,
-		Timeout:         5 * time.Second,
+		Timeout:         time.Duration(timeout) * time.Second,
 	}
 
 	return clientConfig, nil
@@ -92,19 +92,36 @@ func GetConnection(ctx context.Context, host string) (*ssh.Client, error) {
 		return nil, fmt.Errorf("failed to retrieve logger from context: %v", err)
 	}
 
-	clientConfig, err := LoadSSHConfig(ctx, host)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load SSH config for host %s: %w", host, err)
-	}
+	attempts := 0
+	cfg := config.GetConfig()
+	sleepDuration := cfg.SSH.SleepSeconds
+	timeout := cfg.SSH.TimeoutSeconds
+	maxAttempts := cfg.SSH.MaxAttempts
+	logger = logger.WithField("host", host)
+	logger.Infof("Attempting to connect to %s with max attempts %d", host, maxAttempts)
+	for {
+		attempts++
+		if attempts > maxAttempts {
+			return nil, fmt.Errorf("failed to connect to %s after %d attempts", host, maxAttempts)
+		}
+		logger.Infof("Attempting to connect to %s (attempt %d/%d)", host, attempts, maxAttempts)
 
-	logger.Debugf("Connecting to %s", host)
-	conn, err := ssh.Dial("tcp", config.GetConfig().SSH.Hostname+":22", clientConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to %s: %w", host, err)
-	}
+		clientConfig, err := LoadSSHConfig(ctx, host, timeout)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load SSH config for host %s: %w", host, err)
+		}
 
-	logger.Infof("Successfully connected to %s", host)
-	return conn, nil
+		logger.Debugf("Connecting to %s", host)
+		conn, err := ssh.Dial("tcp", config.GetConfig().SSH.Hostname+":22", clientConfig)
+		if err != nil {
+			logger.Warnf("Failed to connect to %s: %v", host, err)
+			time.Sleep(time.Duration(sleepDuration) * time.Second)
+			continue
+		} else {
+			logger.Infof("Successfully connected to %s", host)
+			return conn, nil
+		}
+	}
 }
 
 func RunCommand(ctx context.Context, cmd string, conn *ssh.Client) error {

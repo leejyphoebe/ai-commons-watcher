@@ -49,8 +49,7 @@ func initApp(cmd *cobra.Command, args []string) {
 
 		// Create a sample configuration file
 		configFile := filepath.Join(configDir, "config.yaml")
-		sampleConfig := `cache_dir: "$HOME/.ai-commons/.cache"
-nscc_usage_cache_file_path: "$HOME/.ai-commons/nscc_usage.csv"
+		sampleConfig := `config_dir: "$HOME/.ai-commons"
 node_state_file: "$HOME/.ai-commons/node_state.yaml"
 logging:
   level: INFO
@@ -62,6 +61,10 @@ ssh:
   config_path: "$HOME/.ai-commons/ssh_config"
   keys_path: "$HOME/.ssh"
   known_hosts_path: "$HOME/.ai-commons/known_hosts"
+  key_prefix: "nscc_"
+  max_attempts: 3
+  sleep_seconds: 3
+  timeout_seconds: 30
 bitwarden:
   api_url: "https://api.bitwarden.eu"
   identity_url: "https://identity.bitwarden.eu"

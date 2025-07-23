@@ -17,7 +17,7 @@ build_slack_bot: print_path_instruction
 	@echo "    slack_bot --config /path/to/config.yaml --title 'Message Title'"
 	@echo
 	@echo "Make sure to set the following environment variables as needed before running the bot."
-	@echo "SLACK_AUTH_TOKEN, SLACK_CHANNEL_ID, BITWARDEN_ACCESS_TOKEN, BITWARDEN_CLIENT_ID, BITWARDEN_CLIENT_SECRET, BITWARDEN_ORG_ID"
+	@echo "SLACK_AUTH_TOKEN, SLACK_CHANNEL_ID, BITWARDEN_ACCESS_TOKEN, BITWARDEN_ORG_ID"
 
 run_slack_bot: print_path_instruction
 	@CONFIG=$${config:-}; \
@@ -44,7 +44,7 @@ build: print_path_instruction
 	@echo "    ai-commons --config /path/to/config.yaml --title 'Your Title'"
 	@echo 
 	@echo "Make sure to set the following environment variables as needed before running the AI Commons."
-	@echo "BITWARDEN_ACCESS_TOKEN, BITWARDEN_CLIENT_ID, BITWARDEN_CLIENT_SECRET, BITWARDEN_ORG_ID"
+	@echo "BITWARDEN_ACCESS_TOKEN, BITWARDEN_ORG_ID"
 
 run: print_path_instruction
 	@CONFIG=$${config:-}; \

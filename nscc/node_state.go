@@ -40,13 +40,12 @@ func (node *Node) GetNodeState(ctx context.Context) (NodeState, error) {
 
 	// Check if git is set up
 	isGitSetup, err := node.IsGitSetup(ctx)
-	if err != nil {
-		logger.Error("Failed to check if git is set up: ", err)
-		return state, err
-	}
 	state.IsGitSetup = isGitSetup
 	if !isGitSetup {
 		logger.Warnf("Git is not set up correctly on node %s", node.Host)
+		if err != nil {
+			logger.Warnf("Failed to check if git is set up: %v", err)
+		}
 	}
 
 	// get project state

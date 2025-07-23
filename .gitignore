@@ -176,4 +176,7 @@ cython_debug/
 # golang binary
 bin/**
 
-example/secret/
+example/secret/*
+# do not ignore the required.env file
+!example/secret/required.env
+!example/secret/slack_required.env
