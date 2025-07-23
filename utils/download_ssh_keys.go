@@ -106,8 +106,8 @@ func writeSecretIdsToCache(ctx context.Context, cacheFilePath string, sshKeys ma
 	return nil
 }
 
-// list secret ids and keys starting with ssh_key_
-func ListSSHKeys(ctx context.Context, client *sdk.BitwardenClientInterface, orgId, cacheDir string, cache bool) (map[string]string, error) {
+// list secret ids and keys starting with ssh key prefix
+func ListSSHKeys(ctx context.Context, client *sdk.BitwardenClientInterface, orgId, cacheDir, keyPrefix string, cache bool) (map[string]string, error) {
 	logger, err := GetLoggerFromContext(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve logger from context: %v", err)
@@ -131,7 +131,7 @@ func ListSSHKeys(ctx context.Context, client *sdk.BitwardenClientInterface, orgI
 	}
 
 	for _, secret := range secrets.Data {
-		if secret.Key != "" && len(secret.Key) > 8 && secret.Key[:8] == "ssh_key_" {
+		if secret.Key != "" && len(secret.Key) > len(keyPrefix)+1 && strings.HasPrefix(secret.Key, keyPrefix) {
 			sshKeys[secret.Key] = secret.ID
 		}
 	}
@@ -265,7 +265,7 @@ func DownloadSSHKeys(ctx context.Context, client *sdk.BitwardenClientInterface, 
 	}
 
 	// list SSH keys from Bitwarden
-	sshKeys, err := ListSSHKeys(ctx, client, orgId, cacheDir, cache)
+	sshKeys, err := ListSSHKeys(ctx, client, orgId, cacheDir, keyPrefix, cache)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list SSH keys: %v", err)
 	}
