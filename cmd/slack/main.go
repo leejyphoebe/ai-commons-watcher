@@ -8,6 +8,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -71,9 +72,10 @@ func main() {
 	ctx = context.WithValue(ctx, utils.LoggerContextKey, logger)
 	timestamp := time.Now().Format("2006-01-02 15:04:05")
 	// records the name of the latest file
-	latestFilePath := fmt.Sprintf("%s/output/latest_myprojects.txt", cfg.ConfigDir)
+	latestFilePath := filepath.Join(cfg.ConfigDir, "output", "latest_myprojects.txt")
 	// file with the latest data
-	myprojectsOutputFilepath := fmt.Sprintf("%s/output/myprojects_%s.csv", cfg.ConfigDir, timestamp)
+	myprojectsOutputFilepath := filepath.Join(cfg.ConfigDir, "output", fmt.Sprintf("myprojects_%s.csv", timestamp))
+
 	failedHosts := make([]string, 0)
 
 	for host := range sshKeys {

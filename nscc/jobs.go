@@ -158,13 +158,15 @@ func RunJobs(ctx context.Context) error {
 	// copy and run setup script on remote nodes
 	for _, exp := range config.GetConfig().Experiments {
 		for _, cfgNode := range exp.Nodes {
+			localExp := exp
+			localCfgNode := cfgNode
 			// run setup script and experiment for each node
 			wg.Add(1)
-			go func() {
+			go func(exp config.ExperimentsConfig, cfgNode config.ExperimentNodeConfig) {
 				defer wg.Done()
 				RunExperimentForNode(ctx, exp, cfgNode, sshConns[cfgNode.Host])
 				logger.Infof("Finished running experiment on node: %s", cfgNode.Host)
-			}()
+			}(localExp, localCfgNode)
 		}
 	}
 	wg.Wait()

@@ -120,18 +120,25 @@ func rsyncLocalToRemote(ctx context.Context, srcLocal, dstRemote, options string
 	var wg sync.WaitGroup
 	wg.Add(1)
 	var localErr error
+	var mu sync.Mutex
 
 	// Run the local rsync client
 	go func() {
 		defer wg.Done()
 		out, err := cmd.Output()
+		mu.Lock()
+		defer mu.Unlock()
 		if err != nil {
+			localErr = fmt.Errorf("local rsync failed: %w", err)
 			logger.Errorf("Running local to remote rsync failed: %v", err)
 		}
 		logger.Infof("Rsync output: %s", out)
 	}()
 
 	wg.Wait()
+
+	mu.Lock()
+	defer mu.Unlock()
 
 	if localErr != nil {
 		return fmt.Errorf("Local-to-Remote rsync failed: %w", localErr)

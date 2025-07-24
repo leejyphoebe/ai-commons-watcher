@@ -244,7 +244,7 @@ func parseMyProjectsStdout(ctx context.Context, username string, lines []string)
 			}
 		}
 	}
-	logger.Info(projects)
+	logger.Debugf("Parsed %d projects: %+v", len(projects), projects)
 	return projects, nil
 }
 
