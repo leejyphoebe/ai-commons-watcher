@@ -24,26 +24,7 @@ bitwarden:
 experiments:
   - name: "slimsc"
     git_required: false
-    nodes:
-      - host: silv0011
-        # cluster: nscc
-        experiment_config_paths:
-          - src: "experiments.yaml"
-            dest: "experiments.yaml"
-            command: bash -eu .ai-commons/setup/run_slimsc.sh /experiments/experiments.yaml
-        # TODO: add a way to override setup config per node
-      - host: mohdlami
-        # cluster: 4ir
-        experiment_config_paths:
-          - src: "experiments.yaml"
-            dest: "experiments.yaml"
-            command: bash -eu .ai-commons/setup/run_slimsc.sh /experiments/experiments.yaml
-    # experiment config directory
-    local_config_dir: "example/slimsc"
-    remote_config_dir: "/scratch/users/ntu/$USER/.ai-commons/experiments/slimsc"
-    cmd_dir: "/scratch/users/ntu/$USER"
-
-    # setup and clean up scripts
+    # setup scripts
     setup:
       setup_files_dir: "/scratch/users/ntu/$USER/.ai-commons/setup"
       setup_script_local_path: "example/slimsc/setup.sh"
@@ -65,6 +46,24 @@ experiments:
           dest: "run_slimsc.sh"
         - src: "example/secret/secret.env"
           dest: "secret.env"
+
+    # experiment config directory
+    local_config_dir: "example/slimsc"
+    remote_config_dir: "/scratch/users/ntu/$USER/.ai-commons/experiments/slimsc"
+    cmd_dir: "/scratch/users/ntu/$USER"
+
+    # configure which accounts to use for the experiment
+    nodes:
+      - host: silv0011
+        experiment_config_paths:
+          - src: "experiments.yaml"
+            dest: "experiments.yaml"
+            command: bash -eu .ai-commons/setup/run_slimsc.sh /experiments/experiments.yaml
+      - host: mohdlami
+        experiment_config_paths:
+          - src: "experiments.yaml"
+            dest: "experiments.yaml"
+            command: bash -eu .ai-commons/setup/run_slimsc.sh /experiments/experiments.yaml
 
     # cleanup not implemented yet
     cleanup:
