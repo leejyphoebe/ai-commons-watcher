@@ -52,7 +52,7 @@ experiments:
       #   - "--refresh-sif"
       setup_files:
         # files used in the setup script
-        - src: "example/pbs/download_r1.pbs"
+        - src: "example/slimsc/download_r1.pbs"
           dest: "download_r1.pbs"
         - src: "example/slimsc/pull_slimsc_sif.pbs"
           dest: "pull_slimsc_sif.pbs"
