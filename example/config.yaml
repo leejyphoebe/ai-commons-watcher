@@ -15,6 +15,7 @@ ssh:
   max_attempts: 3
   sleep_seconds: 5
   timeout_seconds: 30
+  port: 22
 bitwarden:
   api_url: "https://api.bitwarden.eu"
   identity_url: "https://identity.bitwarden.eu"
@@ -24,13 +25,13 @@ experiments:
   - name: "slimsc"
     git_required: false
     nodes:
-      # - host: silv0011
-      #   # cluster: nscc
-      #   experiment_config_paths:
-      #     - src: "experiments.yaml"
-      #       dest: "experiments.yaml"
-      #       command: bash -eu .ai-commons/setup/run_slimsc.sh /experiments/experiments.yaml
-      #   # TODO: add a way to override setup config per node
+      - host: silv0011
+        # cluster: nscc
+        experiment_config_paths:
+          - src: "experiments.yaml"
+            dest: "experiments.yaml"
+            command: bash -eu .ai-commons/setup/run_slimsc.sh /experiments/experiments.yaml
+        # TODO: add a way to override setup config per node
       - host: mohdlami
         # cluster: 4ir
         experiment_config_paths:

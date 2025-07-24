@@ -112,7 +112,8 @@ func GetConnection(ctx context.Context, host string) (*ssh.Client, error) {
 		}
 
 		logger.Debugf("Connecting to %s", host)
-		conn, err := ssh.Dial("tcp", config.GetConfig().SSH.Hostname+":22", clientConfig)
+		cfg := config.GetConfig()
+		conn, err := ssh.Dial("tcp", cfg.SSH.Hostname+":"+cfg.SSH.Port, clientConfig)
 		if err != nil {
 			logger.Warnf("Failed to connect to %s: %v", host, err)
 			time.Sleep(time.Duration(sleepDuration) * time.Second)

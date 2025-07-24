@@ -16,6 +16,7 @@ type LoggingConfig struct {
 
 type SSHInitConfig struct {
 	Hostname       string `yaml:"hostname"`
+	Port           string `yaml:"port"` // SSH port, default is 22
 	ConfigPath     string `yaml:"config_path"`
 	KeysPath       string `yaml:"keys_path"`
 	KnownHostsPath string `yaml:"known_hosts_path"`
@@ -134,6 +135,9 @@ func InitConfig(filePath string) error {
 	}
 	if cfg.SSH.Hostname == "" {
 		cfg.SSH.Hostname = "aspire2antu.nscc.sg"
+	}
+	if cfg.SSH.Port == "" {
+		cfg.SSH.Port = "22" // default SSH port
 	}
 	if cfg.SSH.ConfigPath == "" {
 		cfg.SSH.ConfigPath = "$HOME/.ai-commons/ssh_config"

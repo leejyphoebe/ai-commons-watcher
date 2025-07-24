@@ -40,8 +40,6 @@ add_run_slackbot() {
 }
 
 # execute run_slackbot.sh
-$script_path
-
 cmd="$project_dir/bin/run_slackbot.sh"
 date_cmd=$(which date)
 # Ensure the logs directory exists

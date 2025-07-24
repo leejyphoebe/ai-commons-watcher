@@ -107,9 +107,13 @@ func rsyncLocalToRemote(ctx context.Context, srcLocal, dstRemote, options string
 	}
 	logger.Debugf("Starting Local-to-Remote rsync from '%s' to '%s' with options: %s", srcLocal, dstRemote, options)
 
-	args := fmt.Sprintf("%s -e ssh %s %s", options, srcLocal, dstRemote)
-	logger.Infof("Executing local to remote rsync command: rsync %s", args)
-	cmd := exec.Command("rsync", strings.Split(args, " ")...)
+	args := []string{}
+	if options != "" {
+		args = append(args, strings.Fields(options)...)
+	}
+	args = append(args, "-e", "ssh", srcLocal, dstRemote)
+	logger.Infof("Executing local to remote rsync command: rsync %v", args)
+	cmd := exec.Command("rsync", args...)
 
 	cmd.Stderr = os.Stderr
 

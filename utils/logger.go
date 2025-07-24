@@ -93,7 +93,7 @@ func InitLogger() error {
 	}
 
 	// Add a default field for the application name
-	logger.WithField("app", "ai-commons").Info("Logger initialized")
+	logger.Info("Logger initialized")
 
 	return nil
 }
