@@ -50,9 +50,10 @@ build: print_path_instruction
 	@echo "✅ AI Commons built successfully at: $(OUT_DIR)/ai-commons"
 	@echo
 	@echo "You can now run the cli application using:"
-	@echo "    ai-commons --config /path/to/config.yaml --title 'Your Title'"
+	@echo "    ai-commons init"
+	@echo "    ai-commons run --config /path/to/config.yaml"
 	@echo 
-	@echo "Make sure to set the following environment variables as needed before running the AI Commons."
+	@echo "Make sure to set the following environment variables as needed before running init."
 	@echo "BITWARDEN_ACCESS_TOKEN, BITWARDEN_ORG_ID"
 
 run: print_path_instruction
