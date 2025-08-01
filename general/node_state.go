@@ -51,7 +51,7 @@ func (node *Node) GetNodeState(ctx context.Context) (types.NodeState, error) {
 	}
 
 	node.Cluster = utils.GetClusterFromHostname(node.Host)
-	if node.Cluster == "aspire2a" || node.Cluster == "aspire2p" {
+	if node.Cluster == utils.Aspire2A || node.Cluster == utils.Aspire2AP {
 		// get project state
 		projects, err := nscc.GetProject(ctx, node.Conn)
 		if err != nil {
