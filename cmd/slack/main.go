@@ -96,19 +96,15 @@ func main() {
 		}
 		defer conn.Close()
 		sshConns[host] = conn
-		node := &nscc.Node{
-			Host: host,
-			Conn: conn,
-		}
 		logger.Infof("Successfully connected to host %s", host)
 
 		// write myprojects_<timestamp>.csv to ./.cache/output/latest_myprojects.txt
-		projects, err := node.GetProjects(ctx)
+		projects, err := nscc.GetProject(ctx, conn)
 		if err != nil {
 			logger.Errorf("Failed to get user daily report: %v", err)
 			panic(err)
 		}
-		node.SaveSummaryToCsv(ctx, projects, myprojectsOutputFilepath)
+		nscc.SaveSummaryToCsv(ctx, projects, myprojectsOutputFilepath)
 	}
 	// read ./.cache/output/latest_myprojects.txt
 	prevReportPath, err := utils.ReadFile(ctx, latestFilePath)

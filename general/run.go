@@ -1,7 +1,8 @@
-package nscc
+package general
 
 import (
 	"ai-commons/config"
+	"ai-commons/types"
 	"ai-commons/utils"
 	"context"
 	"fmt"
@@ -118,8 +119,8 @@ func RunJobs(ctx context.Context) error {
 	selectedHosts := CombineJobHosts()
 	sshConns := make(map[string]*ssh.Client)
 	logger.Info("Connecting to SSH hosts...")
-	states := NodeStates{}
-	states.Nodes = make(map[string]NodeState)
+	states := types.NodeStates{}
+	states.Nodes = make(map[string]types.NodeState)
 	// record the state of selected nodes
 	for _, host := range selectedHosts {
 		logger = logger.WithField("node", host)

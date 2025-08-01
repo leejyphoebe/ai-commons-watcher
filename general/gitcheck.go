@@ -1,4 +1,4 @@
-package nscc
+package general
 
 import (
 	"ai-commons/utils"

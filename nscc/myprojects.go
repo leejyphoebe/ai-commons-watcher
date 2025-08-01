@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"golang.org/x/crypto/ssh"
 )
 
 type Project struct {
@@ -50,7 +52,7 @@ type MyProjectsSummary struct {
 var tz = "Asia/Singapore"
 var timeFormat = "2006-01-02 15:04:05"
 
-func (node *Node) GetProjects(ctx context.Context) ([]Project, error) {
+func GetProject(ctx context.Context, conn *ssh.Client) ([]Project, error) {
 	// Get the logger from the context
 	logger, err := utils.GetLoggerFromContext(ctx)
 	if err != nil {
@@ -68,7 +70,7 @@ func (node *Node) GetProjects(ctx context.Context) ([]Project, error) {
 
 	// run myprojects to check credits
 	cmd := "myprojects"
-	stdout, _, err := utils.RunCommandGetOutput(ctx, cmd, node.Conn)
+	stdout, _, err := utils.RunCommandGetOutput(ctx, cmd, conn)
 	if err != nil {
 		return nil, fmt.Errorf("failed to run credit check command: %v", err)
 	}
@@ -77,7 +79,7 @@ func (node *Node) GetProjects(ctx context.Context) ([]Project, error) {
 	}
 	lines := strings.Split(stdout, "\n")
 	lines = append(lines, "---END---\n") // hax to mark the end of the output
-	projects, err := parseMyProjectsStdout(ctx, node.Conn.User(), lines)
+	projects, err := parseMyProjectsStdout(ctx, conn.User(), lines)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse myprojects output: %v", err)
 	}
@@ -294,7 +296,7 @@ func createMyProjectSummary(ctx context.Context, project Project) (MyProjectsSum
 }
 
 // save summary and breakdown as csv
-func (node *Node) SaveSummaryToCsv(ctx context.Context, projects []Project, filePath string) error {
+func SaveSummaryToCsv(ctx context.Context, projects []Project, filePath string) error {
 	logger, err := utils.GetLoggerFromContext(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to retrieve logger from context: %v", err)

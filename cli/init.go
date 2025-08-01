@@ -2,7 +2,8 @@ package cli
 
 import (
 	"ai-commons/config"
-	"ai-commons/nscc"
+	"ai-commons/general"
+	"ai-commons/types"
 	"ai-commons/utils"
 	"context"
 	"fmt"
@@ -115,8 +116,8 @@ bitwarden:
 	sshConns := make(map[string]*ssh.Client)
 	logger.Info("Connecting to SSH hosts...")
 	ctx = context.WithValue(ctx, utils.LoggerContextKey, logger)
-	states := nscc.NodeStates{}
-	states.Nodes = map[string]nscc.NodeState{}
+	states := types.NodeStates{}
+	states.Nodes = map[string]types.NodeState{}
 	failedHosts := make([]string, 0)
 
 	for host := range sshKeys {
@@ -124,7 +125,7 @@ bitwarden:
 		if err != nil {
 			logger.Errorf("Failed to connect to host %s: %v", host, err)
 			failedHosts = append(failedHosts, host)
-			state := nscc.NodeState{
+			state := types.NodeState{
 				CanConnect:  false,
 				IsReachable: false,
 				IsGitSetup:  false,
@@ -137,7 +138,7 @@ bitwarden:
 		defer conn.Close()
 		sshConns[host] = conn
 		logger.Infof("Successfully connected to host %s", host)
-		node := nscc.Node{Host: host, Conn: conn}
+		node := general.Node{Host: host, Conn: conn}
 		state, err := node.GetNodeState(ctx)
 		if err != nil {
 			logger.Errorf("Failed to get node state for host %s: %v", host, err)

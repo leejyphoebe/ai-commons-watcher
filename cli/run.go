@@ -2,6 +2,7 @@ package cli
 
 import (
 	"ai-commons/config"
+	"ai-commons/general"
 	"ai-commons/nscc"
 	"ai-commons/utils"
 	"context"
@@ -47,10 +48,12 @@ func runExperiments(cmd *cobra.Command, args []string) {
 	ctx := context.WithValue(context.Background(), utils.LoggerContextKey, logger)
 	cfg := config.GetConfig()
 
-	switch cfg.SSH.Hostname {
-	case nscc.NSCCHostname:
+	cluster := utils.GetClusterFromHostname(cfg.SSH.Hostname)
+
+	switch cluster {
+	case utils.Aspire2A:
 		logger.Infof("Running on NSCC hostname: %s", nscc.NSCCHostname)
-		err := nscc.RunJobs(ctx)
+		err := general.RunJobs(ctx)
 		if err != nil {
 			logger.Errorf("Failed to run jobs: %v", err)
 			os.Exit(1)
@@ -58,5 +61,11 @@ func runExperiments(cmd *cobra.Command, args []string) {
 		logger.Info("Jobs executed successfully.")
 	default:
 		logger.Infof("Running on custom hostname: %s", cfg.SSH.Hostname)
+		err := general.RunJobs(ctx)
+		if err != nil {
+			logger.Errorf("Failed to run jobs: %v", err)
+			os.Exit(1)
+		}
+		logger.Info("Jobs executed successfully.")
 	}
 }
