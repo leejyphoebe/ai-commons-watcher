@@ -19,6 +19,15 @@ build_slack_bot: print_path_instruction
 	@echo "Make sure to set the following environment variables as needed before running the bot."
 	@echo "SLACK_AUTH_TOKEN, SLACK_CHANNEL_ID, BITWARDEN_ACCESS_TOKEN, BITWARDEN_ORG_ID"
 
+docker_build_bot: print_path_instruction
+	docker build -t slack_bot:latest -f slack_scripts/Dockerfile .
+	@echo
+	@echo "✅ Docker image for Slack bot built successfully: slack_bot:latest"
+	@echo
+	@echo "Run the bot using:"
+	@echo "    docker run --rm -v ~/.ai-commons:/app/.ai-commons --env-file=~/.ai-commons/slack.env slack_bot:latest --config /app/.ai-commons/config.yaml --title 'Message Title'"
+	@echo
+
 run_slack_bot: print_path_instruction
 	@CONFIG=$${config:-}; \
 	if [ -z "$$CONFIG" ]; then CONFIG=example/config.yaml; fi; \

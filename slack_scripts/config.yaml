@@ -1,0 +1,52 @@
+config_dir: "$HOME/.ai-commons"
+node_state_file_path: "$HOME/.ai-commons/node_state.yaml"
+
+ssh:
+  hostname: "10.96.190.65"
+  config_path: "$HOME/.ssh/config"
+  keys_path: "$HOME/.ssh"
+  known_hosts_path: "$HOME/.ssh/known_hosts"
+  key_prefix: "ccds_"
+  max_attempts: 3
+  sleep_seconds: 5
+  timeout_seconds: 30
+  port: 22
+bitwarden:
+  state_file: "$HOME/.ai-commons/state"
+
+experiments:
+  - name: "slimsc"
+    git_required: false
+    # setup scripts
+    setup:
+      setup_files_dir: "/home/silv0011/.ai-commons"
+      setup_script_local_path: "slack_scripts/setup.sh"
+      setup_script_remote_path: "setup.sh"
+      setup_files:
+        # files used in the setup script
+        - src: "example/secret/slack.env"
+          dest: "slack.env"
+        - src: "example/secret/dockerhub.env"
+          dest: "dockerhub.env"
+        - src: "slack_scripts/run_slackbot.sh"
+          dest: "run_slackbot.sh"
+        - src: "slack_scripts/cron.sh"
+          dest: "cron.sh"
+
+    # experiment config directory
+    local_config_dir: "slack_scripts"
+    remote_config_dir: "/home/silv0011/.ai-commons"
+    cmd_dir: "/home/silv0011/.ai-commons"
+
+    # configure which accounts to use for the experiment
+    nodes:
+      - host: silv0011
+        experiment_config_paths:
+          - src: "remote_config.yaml"
+            dest: "config.yaml"
+            command: bash -eu cron.sh "$PWD/run_slackbot.sh"
+
+    # cleanup not implemented yet
+    cleanup:
+      cleanup_script: "example/cleanup.sh"
+      cleanup_script_remote_path: "cleanup.sh"
