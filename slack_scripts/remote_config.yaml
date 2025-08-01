@@ -1,5 +1,5 @@
-config_dir: /app/.ai-commons"
-node_state_file_path: /app/.ai-commons/node_state.yaml"
+config_dir: /app/.ai-commons
+node_state_file_path: /app/.ai-commons/node_state.yaml
 
 ssh:
   hostname: "aspire2antu.nscc.sg"
