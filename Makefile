@@ -53,7 +53,7 @@ build: print_path_instruction
 	@echo "    ai-commons init"
 	@echo "    ai-commons run --config /path/to/config.yaml"
 	@echo 
-	@echo "Make sure to set the following environment variables as needed before running init."
+	@echo "Make sure to set the following environment variables as needed before running init or run."
 	@echo "BITWARDEN_ACCESS_TOKEN, BITWARDEN_ORG_ID"
 
 run: print_path_instruction
