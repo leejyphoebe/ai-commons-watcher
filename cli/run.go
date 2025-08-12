@@ -53,19 +53,14 @@ func runExperiments(cmd *cobra.Command, args []string) {
 	switch cluster {
 	case utils.Aspire2A:
 		logger.Infof("Running on NSCC hostname: %s", nscc.NSCCHostname)
-		err := general.RunJobs(ctx)
-		if err != nil {
-			logger.Errorf("Failed to run jobs: %v", err)
-			os.Exit(1)
-		}
-		logger.Info("Jobs executed successfully.")
 	default:
 		logger.Infof("Running on custom hostname: %s", cfg.SSH.Hostname)
-		err := general.RunJobs(ctx)
-		if err != nil {
-			logger.Errorf("Failed to run jobs: %v", err)
-			os.Exit(1)
-		}
-		logger.Info("Jobs executed successfully.")
 	}
+
+	err := general.RunJobs(ctx)
+	if err != nil {
+		logger.Errorf("Failed to run jobs: %v", err)
+		os.Exit(1)
+	}
+	logger.Info("Jobs executed successfully.")
 }

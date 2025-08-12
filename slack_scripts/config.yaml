@@ -19,7 +19,7 @@ experiments:
     git_required: false
     # setup scripts
     setup:
-      setup_files_dir: "/home/silv0011/.ai-commons"
+      setup_files_dir: "/home/$USER/.ai-commons"
       setup_script_local_path: "slack_scripts/setup.sh"
       setup_script_remote_path: "setup.sh"
       setup_files:
@@ -35,8 +35,8 @@ experiments:
 
     # experiment config directory
     local_config_dir: "slack_scripts"
-    remote_config_dir: "/home/silv0011/.ai-commons"
-    cmd_dir: "/home/silv0011/.ai-commons"
+    remote_config_dir: "/home/$USER/.ai-commons"
+    cmd_dir: "/home/$USER/.ai-commons"
 
     # configure which accounts to use for the experiment
     nodes:

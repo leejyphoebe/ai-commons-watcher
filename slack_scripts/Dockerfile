@@ -27,14 +27,12 @@ RUN make build_slack_bot
 FROM debian:stable-slim
 
 # Install any required system libraries
-RUN apt-get update && apt-get install -y libstdc++6 ca-certificates ssh && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends libstdc++6 ca-certificates ssh && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 # Copy binary from builder stage
 COPY --from=builder /app/bin/slack_bot .
-
-RUN echo $HOME
 
 # Command to run the app
 CMD ["./slack_bot"]
