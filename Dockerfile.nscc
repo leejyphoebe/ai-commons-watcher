@@ -56,15 +56,15 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     uv pip install --system torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
 
 ARG VLLM_REPO_URL=https://github.com/googlercolin/vllm.git
-ARG VLLM_BRANCH=colin_v0.9.0.1
+ARG VLLM_BRANCH=colin_v0.10.1.1
 # Add an argument to bust the cache when needed
 ARG CACHE_INVALIDATOR=""
 
 # Clone and install vLLM, using the VLLM_MAX_JOBS build argument
 RUN --mount=type=cache,target=/root/.cache/pip \
     echo "Busting cache with value: ${CACHE_INVALIDATOR}" && \
-    git clone --depth 1 -b ${VLLM_BRANCH} ${VLLM_REPO_URL} && \
-    cd vllm && \
+    git clone --depth 1 --branch ${VLLM_BRANCH} ${VLLM_REPO_URL} vllm && \
+    cd vllm && git fetch --tags && \
     MAX_JOBS=${VLLM_MAX_JOBS} VLLM_USE_PRECOMPILED=0 uv pip install --system -e . && \
     python3 -c "import vllm; print('vLLM version:', vllm.__version__)"
 
