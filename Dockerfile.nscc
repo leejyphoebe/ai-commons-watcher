@@ -51,10 +51,6 @@ RUN if [ -d /usr/local/cuda-$(echo $CUDA_VERSION | cut -d. -f1,2)/compat/ ]; the
         echo "CUDA compat directory not found, skipping ldconfig."; \
     fi
 
-# Install PyTorch for CUDA 12.2 (using cu121 wheels)
-RUN --mount=type=cache,target=/root/.cache/pip \
-    uv pip install --system torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
-
 ARG VLLM_REPO_URL=https://github.com/googlercolin/vllm.git
 ARG VLLM_BRANCH=colin_v0.10.1.1
 # Add an argument to bust the cache when needed
