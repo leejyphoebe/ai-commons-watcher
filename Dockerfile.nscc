@@ -59,8 +59,8 @@ ARG CACHE_INVALIDATOR=""
 # Clone and install vLLM, using the VLLM_MAX_JOBS build argument
 RUN --mount=type=cache,target=/root/.cache/pip \
     echo "Busting cache with value: ${CACHE_INVALIDATOR}" && \
-    git clone --depth 1 --branch ${VLLM_BRANCH} ${VLLM_REPO_URL} vllm && \
-    cd vllm && git fetch --tags && \
+    git clone --branch ${VLLM_BRANCH} ${VLLM_REPO_URL} vllm && \
+    cd vllm && \
     MAX_JOBS=${VLLM_MAX_JOBS} VLLM_USE_PRECOMPILED=0 uv pip install --system -e . && \
     python3 -c "import vllm; print('vLLM version:', vllm.__version__)"
 
