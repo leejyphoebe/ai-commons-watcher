@@ -1,4 +1,3 @@
-cat << 'EOF' > watcher/watcher.py
 #!/usr/bin/env python3
 """
 AI-Commons experiment watcher (Option C: experiment.yaml optional).
