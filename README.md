@@ -1,0 +1,58 @@
+# AI-Commons Experiment Watcher
+
+This repo provides a **Phase-3-style watcher** for AI-Commons experiments.
+
+It:
+- Watches a Syncthing sync folder (mounted as `/sync` in Docker).
+- Waits for experiment folders + `stop.txt`.
+- Runs either a **notebook** or a **Python script**.
+- Produces HTML (+ optionally PDF) reports.
+- Removes `stop.txt` after running so the experiment is not re-run.
+
+---
+
+## 1. Folder layout on CPU server
+
+Example on the NTU CPU server:
+
+/home/USER/phase1_sync/
+  phoebe/
+    test_exp_01/
+    test_exp_02/
+  silvi/
+  ...
+
+When running in Docker, this is mounted as:
+
+/sync/
+  phoebe/
+  silvi/
+  ...
+
+The watcher only cares about what appears under `/sync/USERNAME`.
+
+---
+
+## 2. Config (Option C)
+
+Config file: `config/config.docker.yaml` (inside container)
+
+```yaml
+report_watchers:
+  root_input_dir: "/sync"
+  poll_seconds: 10
+
+  users:
+    - id: "phoebe"
+      input_subdir: "phoebe"          # watches /sync/phoebe
+      experiment_pattern: "test_exp*"
+      stop_file: "stop.txt"
+      runner: "auto"
+      quiescent_seconds: 10
+
+      default_notebook: "analysis.ipynb"
+      default_script: "run.py"
+
+      output_ipynb: "analysis_output.ipynb"
+      output_html: "analysis_report.html"
+      output_pdf: "analysis_report.pdf"
