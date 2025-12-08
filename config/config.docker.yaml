@@ -1,0 +1,19 @@
+report_watchers:
+  root_input_dir: "/sync"
+  poll_seconds: 10
+
+  users:
+    - id: "phoebe"
+      input_subdir: "phoebe"          # watches /sync/phoebe
+      experiment_pattern: "test_exp*"
+      stop_file: "stop.txt"
+      runner: "auto"
+      quiescent_seconds: 10
+
+      default_notebook: "analysis.ipynb"
+      default_script: "run.py"
+
+      output_ipynb: "analysis_output.ipynb"
+      output_html: "analysis_report.html"
+      output_pdf: "analysis_report.pdf"
+EOF
