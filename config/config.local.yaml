@@ -1,0 +1,19 @@
+report_watchers:
+  root_input_dir: "/home/phoebe/phase1_sync"
+  poll_seconds: 10
+
+  users:
+    - id: "phoebe"
+      input_subdir: "phoebe"          # watches /home/phoebe/phase1_sync/phoebe
+      experiment_pattern: "test_exp*" # e.g. test_exp_01, test_exp_99
+      stop_file: "stop.txt"
+      runner: "auto"
+      quiescent_seconds: 10
+
+      default_notebook: "analysis.ipynb"
+      default_script: "run.py"
+
+      output_ipynb: "analysis_output.ipynb"
+      output_html: "analysis_report.html"
+      output_pdf: "analysis_report.pdf"
+EOF
