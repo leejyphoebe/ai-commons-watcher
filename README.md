@@ -1,6 +1,6 @@
-# AI-Commons Experiment Watcher
+# AI-Commons Watcher
 
-This repo provides a **Phase-3-style watcher** for AI-Commons experiments.
+This repo provides a **Watcher** for AI-Commons experiments.
 
 It:
 - Watches a Syncthing sync folder (mounted as `/sync` in Docker).
@@ -33,7 +33,7 @@ The watcher only cares about what appears under `/sync/USERNAME`.
 
 ---
 
-## 2. Config (Option C)
+## 2. Config
 
 Config file: `config/config.docker.yaml` (inside container)
 
