@@ -1,0 +1,7 @@
+PyYAML
+jupyter
+nbconvert
+nbformat
+ipykernel
+numpy
+matplotlib
