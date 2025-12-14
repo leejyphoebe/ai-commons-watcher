@@ -56,3 +56,31 @@ report_watchers:
       output_ipynb: "analysis_output.ipynb"
       output_html: "analysis_report.html"
       output_pdf: "analysis_report.pdf"
+
+---
+
+## 3. Repository Structure
+
+```text
+ai-commons-watcher/
+│
+├── Dockerfile
+├── requirements.txt
+├── README.md
+│
+├── watcher/
+│   ├── __init__.py
+│   └── watcher.py          # Core watcher logic
+│
+├── config/
+│   ├── config.docker.yaml  # Config used inside Docker
+│   └── config.local.yaml   # Config for local (non-Docker) testing
+│
+├── scripts/
+│   └── install_syncthing_ubuntu.sh  # Helper script to install Syncthing
+│
+├── examples/
+│   └── sample_experiment/
+│       ├── experiment.yaml # Example experiment metadata
+│       ├── run.py          # Example experiment script
+│       └── stop.txt        # Trigger file
