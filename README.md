@@ -191,3 +191,176 @@ Syncthing setup is user-managed to allow flexible deployment.
 Docker ensures a reproducible runtime environment.
 
 The system is compatible with AI-Commons but does not depend on it.
+
+---
+
+## 9. Customising the Watcher (What Users Can Change)
+
+This README already explains what the system is, how it works, and how to run it locally and in Docker.
+
+What this section covers is **what users can customise**, without modifying any source code.
+
+All customisation is done via the configuration file.
+
+---
+
+### 9.1 Changing the monitored directory
+
+In `config/config.docker.yaml`:
+
+```yaml
+root_input_dir: "/sync"
+```
+
+This is the root folder being monitored inside Docker.
+
+By default, `/sync` is mapped to `~/phase1_sync` on the CPU server.
+
+To change where experiments are read from, update the Docker volume mount:
+
+```bash
+docker run -v /NEW/PATH:/sync ai-commons-watcher \
+  --config /app/config/config.docker.yaml
+```
+
+---
+
+### 9.2 Adding or removing users
+
+Each user corresponds to a subfolder under `/sync`.
+
+Example configuration:
+
+```yaml
+users:
+  - id: "phoebe"
+    input_subdir: "phoebe"
+```
+
+To add another user:
+
+```yaml
+users:
+  - id: "phoebe"
+    input_subdir: "phoebe"
+
+  - id: "silvi"
+    input_subdir: "silvi"
+```
+
+The watcher will then monitor:
+
+```
+/sync/phoebe
+/sync/silvi
+```
+
+---
+
+### 9.3 Changing experiment naming rules
+
+```yaml
+experiment_pattern: "test_exp*"
+```
+
+This controls which folders are treated as experiments.
+
+Examples:
+
+- `"test_exp*"` → `test_exp_01`, `test_exp_demo`
+- `"exp*"` → `exp1`, `experimentA`
+- `"*"` → any folder
+
+---
+
+### 9.4 Changing the trigger file
+
+```yaml
+stop_file: "stop.txt"
+```
+
+This file signals that an experiment is ready to run.
+
+Users may rename it if needed:
+
+```yaml
+stop_file: "READY"
+```
+
+Then trigger execution with:
+
+```bash
+touch READY
+```
+
+---
+
+### 9.5 Choosing what gets executed
+
+```yaml
+runner: "auto"
+default_notebook: "analysis.ipynb"
+default_script: "run.py"
+```
+
+Supported modes:
+
+- `auto` → runs notebook if present, otherwise script
+- `notebook` → always runs `analysis.ipynb`
+- `script` → always runs `run.py`
+
+Example (script-only workflow):
+
+```yaml
+runner: "script"
+```
+
+---
+
+### 9.6 Adjusting stability and polling behaviour
+
+```yaml
+poll_seconds: 10
+quiescent_seconds: 10
+```
+
+- `poll_seconds`: how often the watcher scans folders
+- `quiescent_seconds`: how long the folder must be unchanged before execution
+
+Increase these values for:
+- Large files
+- Slow network synchronisation
+- Cloud-based storage
+
+---
+
+### 9.7 Enabling or disabling PDF generation
+
+```yaml
+output_pdf: "analysis_report.pdf"
+```
+
+PDF generation is optional.
+
+To disable PDF output, remove or comment out this line.
+
+HTML output will still be generated.
+
+---
+
+## 10. What Users Do Not Need to Configure
+
+- No changes are required on NSCC
+- No AI-Commons installation is required to run the watcher
+- No modification to watcher source code is needed for normal use
+
+---
+
+## 11. Typical User Workflow (Summary)
+
+1. Sync experiment folder using Syncthing
+2. Place `run.py` or `analysis.ipynb` inside the experiment folder
+3. Create `stop.txt`
+4. Watcher detects → executes → generates outputs
+5. `stop.txt` is removed automatically
+
