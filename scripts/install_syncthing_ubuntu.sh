@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-echo "🚀 Installing Syncthing (Ubuntu/Debian)..."
+echo "Installing Syncthing (Ubuntu/Debian)..."
 
 sudo apt-get update
 sudo apt-get install -y curl apt-transport-https gnupg
@@ -16,6 +16,6 @@ sudo apt-get update
 sudo apt-get install -y syncthing
 
 echo
-echo "✅ Syncthing installed."
+echo "Syncthing installed."
 echo "To start it for this user, run:"
 echo "   syncthing serve --no-browser &"
