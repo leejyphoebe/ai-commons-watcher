@@ -66,6 +66,9 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 RUN --mount=type=cache,target=/root/.cache/pip \
     git clone --depth 1 -b v0.10.1.1 https://github.com/vllm-project/vllm.git && \
     cd vllm && \
+    # Add upstream and fetch tags so setuptools_scm can find them
+    git remote add upstream https://github.com/vllm-project/vllm.git && \
+    git fetch upstream --tags && \
     MAX_JOBS=${VLLM_MAX_JOBS} VLLM_USE_PRECOMPILED=0 uv pip install --system -e . && \
     python3 -c "import vllm; print('vLLM version:', vllm.__version__)"
 
