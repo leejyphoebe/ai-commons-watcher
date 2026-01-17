@@ -1,6 +1,6 @@
 # AI-Commons Watcher
 
-A lightweight, event-driven watcher that automatically executes user experiments synced into the NTU CPU server via Syncthing.
+A lightweight, event-driven watcher that automatically executes user experiments synced into the NTU CPU server via **Dockerised Syncthing**.
 
 The watcher:
 
@@ -12,29 +12,19 @@ The watcher:
 
 ---
 
-## 1. Repository Structure
+## 1. Folder layout (Host Server)
 
 ```text
-ai-commons-watcher/
-  Dockerfile
-  requirements.txt
-  README.md
+/path/to/ai-commons-watcher/
+  sync/
+    <your_username>/
+      <any_experiment_folder_name>/
+        run.py OR analysis.ipynb
+        stop.txt
 
-  watcher/
-    watcher.py          # Main watcher logic
+Inside Docker, `./sync` is mounted as `/sync`, so the watcher reads:
 
-  config/
-    config.docker.yaml  # Config used inside Docker
-    config.local.yaml   # Config for local testing
-
-  scripts/
-    install_syncthing_ubuntu.sh  # Optional helper for setting up Syncthing
-
-  examples/
-    sample_experiment/
-      run.py
-      experiment.yaml
-      stop.txt
+/sync/<your_username>/<any_experiment_folder_name>/
 ```
 
 ---
@@ -56,16 +46,16 @@ This design ensures automated, repeatable, hands-free experiment processing.
 
 ---
 
----
-
 ## 3. Prerequisites
 
 Before running the watcher, you must:
 
-- Have access to the NTU CPU server
-- Have Docker installed on the CPU server
-- Install and configure Syncthing
-- Clone this repository onto the CPU server
+- Access to an NTU CPU server
+- Docker and Docker Compose available on the CPU server
+- Git
+
+> Syncthing is **not installed on the host OS** for the demo.
+> It runs inside Docker using Docker Compose.
 
 ### 3.1 Clone the Repository
 
@@ -80,117 +70,73 @@ All commands in this README assume you are inside the repository root.
 
 ---
 
-## 4. Syncthing Setup
+## 4. Docker-First Setup (Syncthing + Watcher)
 
-> **Important**
->
-> The watcher can start without Syncthing, but it will see an empty `/sync` directory.
->
-> To actually process experiments, Syncthing **must be set up first** so that experiment
-> folders are synced into the CPU server before running Docker.
+This demo runs **both Syncthing and the watcher inside Docker** using Docker Compose.
 
-This repository includes a helper script for installing Syncthing
-on Ubuntu / Debian / WSL:
-
-```text
-scripts/install_syncthing_ubuntu.sh
-```
-
-### 4.1 Install Syncthing
-
-On the NTU CPU server (and optionally on your laptop):
+### 4.1 Clone the repository
 
 ```bash
-chmod +x scripts/install_syncthing_ubuntu.sh
-./scripts/install_syncthing_ubuntu.sh
+git clone <REPO_URL>
+cd ai-commons-watcher
 ```
 
-This script:
-- Adds the official Syncthing APT repository
-- Imports the GPG signing key
-- Installs the latest stable Syncthing release
-
----
-
-### 4.2 Start Syncthing (CLI Mode)
-
-Start Syncthing on the **CPU server**:
+### 4.2 Configure permissions (important)
 
 ```bash
-syncthing serve --no-browser --no-restart &
+cp .env.example .env
+# edit .env:
+# PUID=$(id -u)
+# PGID=$(id -g)
 ```
+This ensures files created by Docker are owned by your user.
 
-Start Syncthing on your **laptop** (or NSCC machine):
+
+### 4.3 Configure watcher
 
 ```bash
-syncthing serve --no-browser --no-restart &
+cp config/config.template.yaml config/config.docker.yaml
+# edit id and input_subdir to your NTU username
 ```
 
-Once running, Syncthing will generate a **device ID** for each machine.
-
----
-
-### 4.3 How Syncthing Integrates With the Watcher
-
-After setup, Syncthing ensures:
-
-```text
-Laptop / NSCC → CPU server → Docker
-```
-
-Folder mapping:
-
-```text
-CPU server folder: ~/phase1_sync/USERNAME
-Docker view:       /sync/USERNAME
-```
-
-The watcher monitors `/sync/USERNAME` and executes experiments automatically
-when `stop.txt` appears.
-
-
-## 5. Minimal Local Test (Without Docker)
+### 4.4 Start Syncthing + Watcher
 
 ```bash
-pip install -r requirements.txt
-python -m watcher.watcher --config config/config.local.yaml
+mkdir -p sync
+docker compose up -d --build
+docker logs -f ai-commons-watcher
 ```
 
-The watcher will start and wait for experiments.
+### 4.5 Syncthing Web UI and Ports
 
----
+On shared NTU servers, default Syncthing ports may already be in use.
+This project maps Syncthing to alternative host ports:
 
-## 6. Running in Docker (Recommended)
+- Web UI: http://<host-server-ip>:28384
+- Sync port: tcp://<host-server-ip>:22200
 
-Build the image:
+If inbound ports are blocked, use SSH port forwarding:
 
 ```bash
-docker build -t ai-commons-watcher .
+ssh -L 28384:localhost:28384 <user>@<host-server>
 ```
-
-Run the watcher:
-
-```bash
-docker run \
-  -v ~/phase1_sync:/sync \
-  ai-commons-watcher \
-  --config /app/config/config.docker.yaml
-```
-
-Where:
-- `~/phase1_sync` is your Syncthing root
-- Inside Docker it becomes `/sync`
+Then open http://localhost:28384 in your browser.
 
 ---
 
 ## 7. Creating an Example Experiment
 
-```bash
-mkdir -p ~/phase1_sync/USER/test_exp_demo
-cd ~/phase1_sync/USER/test_exp_demo
-```
+All experiments must be created inside the `sync/` directory of this repository.
 
-Add a script:
+### 7.1 Create an experiment folder
+
+```bash
+mkdir -p sync/<your_username>/example_experiment
+cd sync/<your_username>/example_experiment
+```
+You may name the experiment folder anything.
+
+### 7.2 Script-based experiment (run.py)
 
 ```bash
 cat << 'EOF' > run.py
@@ -199,19 +145,18 @@ with open("result.txt", "w") as f:
     f.write("Success")
 EOF
 ```
-
-Trigger execution:
-
+Trigger execution by creating the stop file:
 ```bash
 touch stop.txt
 ```
 
-Expected outcome:
-- The watcher detects the folder
-- Runs `run.py`
-- Produces `result.txt`
-- Removes `stop.txt`
+### 7.3 Expected outcome
 
+After detection, the watcher will:
+- Execute run.py
+- Generate output files (e.g. result.txt)
+- Remove stop.txt to prevent re-running
+The experiment folder will now contain the results.
 ---
 
 ## 8. Configuration Summary
@@ -223,12 +168,12 @@ report_watchers:
   root_input_dir: "/sync"
   poll_seconds: 10
 
-  users:
-    - id: "phoebe"
-      input_subdir: "phoebe"
-      experiment_pattern: "test_exp*"
-      stop_file: "stop.txt"
-      runner: "auto"
+users:
+  - id: "YOUR_NTU_USERNAME"
+    input_subdir: "YOUR_NTU_USERNAME"
+    experiment_pattern: "*"
+    stop_file: "stop.txt"
+    runner: "auto"
 ```
 
 Users can easily adjust:
@@ -269,7 +214,8 @@ docker logs -f <container>
 
 ## 10. Notes
 
-- This watcher runs on the NTU CPU server
-- No NSCC configuration is needed
-- Syncthing setup is performed separately by each user
-- Designed to integrate smoothly with the AI-Commons workflow
+- This project is designed for NTU CPU servers
+- Syncthing and the watcher run fully inside Docker
+- No OS-level Syncthing installation is required for the demo
+- Users may create experiment folders with any name
+- Trigger execution by adding `stop.txt`
