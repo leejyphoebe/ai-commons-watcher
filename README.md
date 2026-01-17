@@ -57,17 +57,6 @@ Before running the watcher, you must:
 > Syncthing is **not installed on the host OS** for the demo.
 > It runs inside Docker using Docker Compose.
 
-### 3.1 Clone the Repository
-
-On the NTU CPU server, clone this repository:
-
-```bash
-git clone <REPO_URL>
-cd ai-commons-watcher
-```
-
-All commands in this README assume you are inside the repository root.
-
 ---
 
 ## 4. Docker-First Setup (Syncthing + Watcher)
@@ -124,11 +113,11 @@ Then open http://localhost:28384 in your browser.
 
 ---
 
-## 7. Creating an Example Experiment
+## 5. Creating an Example Experiment
 
 All experiments must be created inside the `sync/` directory of this repository.
 
-### 7.1 Create an experiment folder
+### 5.1 Create an experiment folder
 
 ```bash
 mkdir -p sync/<your_username>/example_experiment
@@ -136,7 +125,7 @@ cd sync/<your_username>/example_experiment
 ```
 You may name the experiment folder anything.
 
-### 7.2 Script-based experiment (run.py)
+### 5.2 Script-based experiment (run.py)
 
 ```bash
 cat << 'EOF' > run.py
@@ -150,16 +139,18 @@ Trigger execution by creating the stop file:
 touch stop.txt
 ```
 
-### 7.3 Expected outcome
+### 5.3 Expected outcome
 
 After detection, the watcher will:
-- Execute run.py
-- Generate output files (e.g. result.txt)
-- Remove stop.txt to prevent re-running
+- Execute `run.py`
+- Generate output files (e.g. `result.txt`)
+- Remove `stop.txt` to prevent re-running
+
 The experiment folder will now contain the results.
+
 ---
 
-## 8. Configuration Summary
+## 6. Configuration Summary
 
 Key settings from `config/config.docker.yaml`:
 
@@ -186,7 +177,7 @@ Full customisation is documented separately.
 
 ---
 
-## 9. Troubleshooting
+## 7. Troubleshooting
 
 Watcher shows no output?
 
@@ -212,7 +203,7 @@ docker logs -f <container>
 
 ---
 
-## 10. Notes
+## 8. Notes
 
 - This project is designed for NTU CPU servers
 - Syncthing and the watcher run fully inside Docker
