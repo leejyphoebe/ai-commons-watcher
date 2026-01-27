@@ -93,7 +93,7 @@ http://127.0.0.1:8384
 ## 5. Access Syncthing Web GUI (via SSH Tunnel)
 
 NSCC does not expose ports publicly, so the GUI must be accessed via SSH port forwarding.
-From your local laptop:
+From your local laptop, open a new terminal:
 ```bash
 ssh -N -L 8384:127.0.0.1:8384 <nscc_username>@aspire2antu.nscc.sg
 ```
