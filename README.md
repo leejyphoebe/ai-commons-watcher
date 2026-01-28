@@ -10,6 +10,16 @@ The watcher:
 - Generates HTML (and optional PDF) reports
 - Removes `stop.txt` to prevent re-processing
 
+### One-Time Setup Philosophy
+
+The intended workflow is:
+
+1. User sets up Syncthing on NSCC once
+2. Syncthing is launched inside `tmux`
+3. User detaches and logs out
+4. All future experiment files sync automatically
+5. The watcher on the CPU server handles execution without user action
+
 ---
 
 ## 1. Folder layout (Host Server)
@@ -41,6 +51,27 @@ Inside Docker, `./sync` is mounted as `/sync`, so the watcher reads:
   - generates output files (HTML / PDF)
   - removes `stop.txt`
 - The watcher continues running in the background
+
+## Syncthing Runtime Model (Important)
+
+This project uses Syncthing to sync experiment folders from NSCC to the NTU CPU server.
+
+### CPU Server (Host Server)
+- Syncthing runs **inside Docker**
+- Managed by Docker Compose
+- Configured with `restart: unless-stopped`
+- Intended to be **always running**
+- No user interaction required after setup
+
+### NSCC
+- Syncthing runs as a **user-level process**
+- System services (systemd) are not available on NSCC
+- Syncthing must be started **once inside a tmux session**
+- After setup, users **do not need to touch Syncthing again**
+- File syncing happens automatically in the background
+
+This design follows standard HPC usage patterns and NSCC constraints.
+
 
 This design ensures automated, repeatable, hands-free experiment processing.
 
