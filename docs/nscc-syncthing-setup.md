@@ -114,6 +114,13 @@ tmux attach -t syncthing
 pkill -u "$USER" syncthing
 ```
 
+Notes
+- This setup only needs to be done once
+- Syncthing will automatically sync files whenever:
+  - NSCC login node is available
+  - Network connectivity exists
+- This follows standard HPC best practices
+
 ---
 
 ## 5. Access Syncthing Web GUI (via SSH Tunnel)
@@ -223,6 +230,19 @@ On the Host Server:
 - This is the officially supported Syncthing workflow
 - CLI-only configuration is intentionally avoided for reliability
 - Docker is required only on the Host Server, not NSCC
+
+### Do I Need to Access the Syncthing GUI Again?
+No.
+After:
+- Devices are paired
+- Folder paths are configured
+- Syncthing is running inside `tmux`
+
+The Syncthing GUI is **not required** for normal operation.
+
+The GUI is only needed for:
+- Initial setup
+- Debugging (rare)
 
 ---
 
