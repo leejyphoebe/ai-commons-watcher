@@ -71,22 +71,48 @@ syncthing v2.0.13 ...
 
 ---
 
-## 4. Start Syncthing on NSCC
+## 4. Running Syncthing Persistently on NSCC (Required)
 
-Run:
+This is a **one-time setup**.
+
+On NSCC, Syncthing runs as a normal user process.
+If started in a regular SSH session, it will stop when the session ends.
+
+To ensure Syncthing continues running in the background, it must be started
+inside a `tmux` session.
+
+---
+
+### Step 1: Create a tmux session
 
 ```bash
-syncthing
+tmux new -s syncthing
 ```
 
-On first run, Syncthing will:
-- Generate a Device ID
-- Create configuration files under:
-~/.local/state/syncthing/
-- Start a Web GUI bound to:
-http://127.0.0.1:8384
+### Step 2: Start Syncthing inside tmux
 
-**Leave this terminal running.**
+```bash
+syncthing --gui-address=127.0.0.1:8384
+```
+
+### Step 3: Detach from tmux (Syncthing keeps running)
+
+Press:
+Ctrl + B, then D
+
+You can now safely close your SSH session. Syncthing will continue running in the background.
+
+### Step 4: (Optional) Reattach later
+
+```bash
+tmux attach -t syncthing
+```
+
+### Step 5: (Optional) Stop Syncthing
+
+```bash
+pkill -u "$USER" syncthing
+```
 
 ---
 
