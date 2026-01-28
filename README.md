@@ -10,6 +10,31 @@ The watcher:
 - Generates HTML (and optional PDF) reports
 - Removes `stop.txt` to prevent re-processing
 
+## Setup Overview
+
+This project requires **two one-time setups**:
+
+1. **CPU Server (Host Server)**  
+   Runs Docker-based services (Watcher + Syncthing) and is intended to be always-on.
+
+2. **NSCC (User Side)**  
+   Runs Syncthing as a user-level process to sync experiment folders to the CPU server.
+
+Both setups are required for the system to function correctly.
+
+## NSCC User Setup (Required)
+
+If you are syncing experiments from **NSCC**, you must complete the NSCC setup **once**.
+
+**Follow this guide carefully**:  
+[NSCC Syncthing Setup Guide](docs/nscc-syncthing-setup.md)
+
+This guide covers:
+- Installing Syncthing without sudo
+- Running Syncthing persistently using `tmux`
+- Accessing the Syncthing GUI (for initial setup only)
+- Ensuring automatic background syncing to the CPU server
+
 ### One-Time Setup Philosophy
 
 The intended workflow is:
