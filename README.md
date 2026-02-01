@@ -12,21 +12,32 @@ The watcher:
 
 ## Setup Overview
 
-This project requires **two one-time setups**:
+This project requires two one-time setups, which **must be completed in order**:
 
-1. **CPU Server (Host Server)**  
-   Runs Docker-based services (Watcher + Syncthing) and is intended to be always-on.
+### 1. CPU Server (Host Server) — *Required First*
+Runs Docker-based services (AI-Commons Watcher + Syncthing) and is intended to be always-on.
 
-2. **NSCC (User Side)**  
-   Runs Syncthing as a user-level process to sync experiment folders to the CPU server.
+- Hosts the Syncthing service inside Docker
+- Accepts inbound Syncthing connections
+- Executes synced experiments automatically
 
-Both setups are required for the system to function correctly.
+**Important**  
+Due to NSCC firewall restrictions, all Syncthing device connections must be initiated from the Host Server.
 
-## NSCC User Setup (Required)
+### 2. NSCC (User Side) — *After Host Setup*
+Runs Syncthing as a user-level process to sync experiment folders to the CPU server.
+This setup is performed **once per user**.
+
+- NSCC does **not** accept inbound connections
+- NSCC only accepts device and folder requests from the Host Server
+
+**Important**  
+Do not attempt to add the Host Server as a remote device from the NSCC Syncthing GUI.  
+All Syncthing connections are initiated from the Host Server.
 
 If you are syncing experiments from **NSCC**, you must complete the NSCC setup **once**.
 
-**Follow this guide carefully**:  
+**Follow this guide carefully:**  
 [NSCC Syncthing Setup Guide](docs/nscc-syncthing-setup.md)
 
 This guide covers:
