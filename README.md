@@ -180,9 +180,9 @@ Then open http://localhost:28384 in your browser.
 
 ---
 
-## 5. Creating an Example Experiment
+## 5. Creating an Example Experiment (Host or Pre-Shared Folder)
 
-All experiments must be created inside the `sync/` directory of this repository.
+In practice, experiment folders are typically created on the Host Server and shared to NSCC automatically via Syncthing.
 
 ### 5.1 Create an experiment folder
 
@@ -275,5 +275,5 @@ docker logs -f <container>
 - This project is designed for NTU CPU servers
 - Syncthing and the watcher run fully inside Docker
 - No OS-level Syncthing installation is required for the demo
-- Users may create experiment folders with any name
+- Users may create experiment folders with any name (within synced folders)
 - Trigger execution by adding `stop.txt`
