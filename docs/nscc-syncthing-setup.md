@@ -4,9 +4,11 @@ This guide explains how to set up **Syncthing on NSCC** to sync experiment data 
 
 ## 1. Prerequisites
 
+This guide assumes the **Host Server has already been set up**.
+
 - NSCC account with SSH access
 - Working internet connection on NSCC
-- Host Server Syncthing already running (Dockerised)
+- Host Server Syncthing running inside Docker
 
 ---
 
@@ -137,84 +139,85 @@ http://127.0.0.1:8384
 ```
 ---
 
-## 6. Pair with Host Server (GUI)
+## 6. Device Pairing (Host-Initiated)
 
-### 6.1 Add Host Server as Remote Device (NSCC side)
+**Important**  
+Due to NSCC firewall restrictions, **all Syncthing device connections must be initiated from the Host Server GUI**.
 
-In the NSCC Syncthing GUI:
-1. Click Add Remote Device
-2. Paste the Host Server Device ID
-3. Set a recognisable name (e.g. ai-commons-host)
-4. Click Save
+NSCC must **NOT** add the Host Server as a remote device.
 
-### 6.2 Accept Device on Host Server
+1. On the **Host Server Syncthing GUI**:
+   - Click **Add Remote Device**
+   - Paste the **NSCC Device ID**
+   - Save
+  You can find the NSCC Device ID in the Syncthing GUI under:
+  Actions → Show ID
 
-On the Host Server Syncthing GUI:
-1. Accept the incoming device request
-Pairing is now complete.
+
+2. On **NSCC Syncthing GUI**:
+   - Accept the incoming device request
+
+Device pairing is now complete.
 
 ---
 
-## 7. Create and Share an Experiment Folder
+## 7. Folder Sharing (Host-Defined)
 
-### 7.1 Create Folder on NSCC (CLI)
+**Important**  
+- Folders must be **created and defined on the Host Server first**.  
+- NSCC should only accept shared folders.
 
+### Why `/sync` Does NOT Work
+
+When Syncthing asks for a local folder path, using:
+
+/sync
+
+will NOT work.
+
+This is because `/sync` is a **Docker mount point**, not a real filesystem
+path visible to Syncthing.
+
+### Correct Procedure (Host Server)
+
+1. On the Host Server:
 ```bash
-mkdir -p ~/experiments/<username>/test_exp_demo
-echo "hello ai commons" > ~/experiments/<username>/test_exp_demo/README.txt
+mkdir -p ./sync/<username>
 ```
 
-### 7.2 Add Folder in NSCC GUI
-In the NSCC Syncthing GUI:
-- Click Add Folder
+2. In the Host Server Syncthing GUI, add a folder:
+- Folder Label: <username>
+- Folder Path: sync/<username>
+- Folder Type: Send & Receive
+- Share with: NSCC device
 
-Folder Label
-```bash
-test_exp_demo
-```
-
-Folder Path
-```bash
-/home/users/ntu/<username>/experiments/<username>/test_exp_demo
-```
-
-Folder Type
-```bash
-Send & Receive
-```
-
-Under Sharing:
-- Tick the Host Server
-- Click Save
-
-### 7.3 Accept Folder on Host Server
-On the Host Server Syncthing GUI:
-1. Accept the folder
-2. Leave the default path unchanged
-3. Click Save
+3. On NSCC:
+- Accept the incoming folder share
+- Do not change the folder path
 
 ---
 
 ## 8. Verify Sync
 
+Use any experiment folder that has been shared from the Host Server.
+
 On the Host Server:
 ```bash
-ls /home/<host_user>/ai-commons-watcher/sync/<username>/test_exp_demo
+ls ai-commons-watcher/sync/<username>/<experiment_folder>
 ```
 
 Expected output:
-```bash
-README.txt
-```
+Experiment files synced from NSCC
+
 This confirms NSCC → Host Server syncing works.
 
 ---
 
 ## 9. Trigger Experiment Execution (Optional)
 
-To trigger the watcher, on NSCC:
+Inside the synced experiment folder on NSCC:
 ```bash
-touch ~/experiments/<username>/test_exp_demo/stop.txt
+touch stop.txt
 ```
 
 On the Host Server:
