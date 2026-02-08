@@ -1,0 +1,31 @@
+services:
+  syncthing:
+    image: syncthing/syncthing:latest
+    container_name: ai-commons-syncthing
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=Asia/Singapore
+    volumes:
+      - ${SYNC_DIR}:/var/syncthing
+    ports:
+      - "${ST_GUI_PORT}:8384"
+      - "${ST_TCP_PORT}:22000/tcp"
+      - "${ST_UDP_PORT}:22000/udp"
+      - "${ST_DISCOVERY_PORT}:21027/udp"
+    restart: unless-stopped
+
+  watcher:
+    build:
+      context: ./ai-commons-watcher
+    container_name: ai-commons-watcher
+    user: "${PUID}:${PGID}"
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ${SYNC_DIR}:/sync
+      - ${WATCHER_CONFIG_DIR}:/app/config
+    command: ["--config", "/app/config/config.docker.yaml"]
+    depends_on:
+      - syncthing
+    restart: unless-stopped
