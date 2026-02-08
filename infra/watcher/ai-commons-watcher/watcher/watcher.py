@@ -33,6 +33,7 @@ report_watchers:
 import argparse
 import subprocess
 import time
+import sys
 from pathlib import Path
 from typing import Optional, Tuple
 
@@ -196,21 +197,21 @@ def run_notebook(
               f"HTML report is still available.")
 
 
-def run_script(
-    script_path: Path,
-    exp_dir: Path,
-):
-    """
-    Run a Python script in the experiment folder.
-
-    The script is responsible for generating its own outputs.
-    """
+def run_script(script_path: Path, exp_dir: Path):
     print(f"[Script] Running {script_path.name} in {exp_dir} ...")
-    subprocess.run(
-        ["python", str(script_path)],
-        check=True,
-        cwd=str(exp_dir),
-    )
+    try:
+        subprocess.run(
+            [sys.executable, str(script_path)],
+            check=True,
+            cwd=str(exp_dir),
+            timeout=300,   # 5 minutes
+        )
+    except subprocess.TimeoutExpired:
+        (exp_dir / "error.log").write_text("Script timed out\n")
+        print("Script timed out.")
+    except subprocess.CalledProcessError as e:
+        (exp_dir / "error.log").write_text(str(e))
+        print("Script failed.")
 
 
 # ----------------- Main loop ----------------- #
@@ -270,14 +271,9 @@ def process_experiment(exp_dir: Path, user_cfg: dict):
 
     runner_type, target = decide_runner(exp_dir, user_cfg)
     if runner_type is None:
-        print(f"Skipping {exp_dir}: unable to decide runner.")
-        # Optional: remove stop to avoid re-trigger
-        try:
-            stop_file.unlink()
-            print(f"Removed stop.txt from {exp_dir} after failure.")
-        except Exception as e:
-            print(f"Failed to remove stop.txt: {e}")
-        return
+    	print(f"Skipping {exp_dir}: unable to decide runner. Will retry next poll.")
+    	return
+
 
     try:
         if runner_type == "notebook":

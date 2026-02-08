@@ -73,6 +73,9 @@ Inside Docker, `./sync` is mounted as `/sync`, so the watcher reads:
 /sync/<your_username>/<any_experiment_folder_name>/
 ```
 
+On the host machine, check your SYNC_DIR folder instead
+(e.g. `~/ai-commons-sync`).
+
 ---
 
 ## 2. How It Works
