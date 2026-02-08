@@ -144,7 +144,7 @@ http://127.0.0.1:8384
 **Important**  
 Due to NSCC firewall restrictions, **all Syncthing device connections must be initiated from the Host Server GUI**.
 
-NSCC must **NOT** add the Host Server as a remote device.
+Preferred: host-initiated. If no popup appears, manually add the Host device ID on NSCC.
 
 1. On the **Host Server Syncthing GUI**:
    - Click **Add Remote Device**
