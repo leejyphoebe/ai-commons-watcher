@@ -36,7 +36,11 @@ import time
 import sys
 from pathlib import Path
 from typing import Optional, Tuple
-
+import os
+import smtplib
+import mimetypes
+import zipfile
+from email.message import EmailMessage
 import yaml
 
 
@@ -213,6 +217,111 @@ def run_script(script_path: Path, exp_dir: Path):
         (exp_dir / "error.log").write_text(str(e))
         print("Script failed.")
 
+def zip_experiment_outputs(exp_dir: Path) -> Path:
+    """
+    Create outputs.zip from files in exp_dir, excluding stop.txt and outputs.zip itself.
+    """
+    zip_path = exp_dir / "outputs.zip"
+
+    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+        for p in exp_dir.rglob("*"):
+            if not p.is_file():
+                continue
+            if p.name == "stop.txt":
+                continue
+            if p.name == "outputs.zip":
+                continue
+            zf.write(p, arcname=p.relative_to(exp_dir))
+
+    return zip_path
+
+
+def attach_file(msg: EmailMessage, file_path: Path):
+    """
+    Attach a file with a guessed MIME type.
+    """
+    mime_type, _ = mimetypes.guess_type(str(file_path))
+    if mime_type:
+        maintype, subtype = mime_type.split("/", 1)
+    else:
+        maintype, subtype = "application", "octet-stream"
+
+    with file_path.open("rb") as f:
+        msg.add_attachment(
+            f.read(),
+            maintype=maintype,
+            subtype=subtype,
+            filename=file_path.name,
+        )
+
+
+def send_experiment_email(exp_dir: Path, user_cfg: dict):
+    """
+    Send a completion email for one experiment.
+    Uses EMAIL_TO from env, or user_cfg['email'] if provided later.
+    Attaches main report if present, plus outputs.zip.
+    """
+    host = os.environ.get("SMTP_HOST")
+    port = int(os.environ.get("SMTP_PORT", "587"))
+    smtp_user = os.environ.get("SMTP_USER")
+    smtp_pass = os.environ.get("SMTP_PASS", "").strip()
+    email_from = os.environ.get("EMAIL_FROM", smtp_user)
+
+    # Future-friendly: allow per-user email in YAML later
+    email_to = user_cfg.get("email") or os.environ.get("EMAIL_TO")
+
+    if not all([host, smtp_user, smtp_pass, email_from, email_to]):
+        print(f"[Email] Skipping email for {exp_dir}: SMTP settings incomplete.")
+        return
+
+    subject = f"Watcher completed: {exp_dir.name}"
+
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = email_from
+    msg["To"] = email_to
+    msg.set_content(
+        f"""Your experiment has completed.
+
+Experiment folder: {exp_dir.name}
+
+This email was sent automatically by AI-Commons Watcher.
+"""
+    )
+
+    # Prefer attaching main report if available
+    preferred_files = [
+        exp_dir / user_cfg.get("output_pdf", "analysis_report.pdf"),
+        exp_dir / user_cfg.get("output_html", "analysis_report.html"),
+        exp_dir / "result.txt",
+        exp_dir / "report.txt",
+        exp_dir / "error.log",
+    ]
+
+    attached_any = False
+
+    for f in preferred_files:
+        if f.exists() and f.is_file():
+            attach_file(msg, f)
+            attached_any = True
+            break
+
+    # Always try to attach a zip of outputs
+    zip_path = zip_experiment_outputs(exp_dir)
+    if zip_path.exists():
+        attach_file(msg, zip_path)
+        attached_any = True
+
+    if not attached_any:
+        print(f"[Email] No files attached for {exp_dir}, sending notification only.")
+
+    with smtplib.SMTP(host, port, timeout=20) as s:
+        s.ehlo()
+        s.starttls()
+        s.login(smtp_user, smtp_pass)
+        s.send_message(msg)
+
+    print(f"[Email] Sent completion email for {exp_dir} to {email_to}")
 
 # ----------------- Main loop ----------------- #
 
@@ -274,7 +383,6 @@ def process_experiment(exp_dir: Path, user_cfg: dict):
     	print(f"Skipping {exp_dir}: unable to decide runner. Will retry next poll.")
     	return
 
-
     try:
         if runner_type == "notebook":
             run_notebook(target, exp_dir, user_cfg)
@@ -282,6 +390,13 @@ def process_experiment(exp_dir: Path, user_cfg: dict):
             run_script(target, exp_dir)
         else:
             print(f"Unknown runner type {runner_type} for {exp_dir}")
+            return
+
+        try:
+            send_experiment_email(exp_dir, user_cfg)
+        except Exception as e:
+            print(f"[Email] Failed to send email for {exp_dir}: {e}")
+
     except subprocess.CalledProcessError as e:
         print(f"Error processing {exp_dir}: {e}")
     finally:
