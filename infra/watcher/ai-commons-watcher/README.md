@@ -308,3 +308,41 @@ the watcher will not detect it.
 - No OS-level Syncthing installation is required for the demo
 - Users may create experiment folders with any name (within synced folders)
 - Trigger execution by adding `stop.txt`
+  
+
+## Email Notifications (Optional)
+
+The watcher can send email notifications when an experiment finishes.
+
+### SMTP Setup
+
+Create a `.env` file in the project root with:
+
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=<email account>
+SMTP_PASS=<app password>
+EMAIL_FROM=<sender email>
+EMAIL_TO=<default recipient>
+
+EMAIL_TO acts as a fallback if a user email is not configured.
+
+### Per-user email configuration
+
+Users can optionally specify their email in the watcher configuration:
+
+users:
+  - id: "phoebe"
+    input_subdir: "phoebe"
+    email: "phoebe@email.com"
+
+If this field is present, experiment results will be sent to that email address.
+
+### Email Contents
+
+The email may include:
+
+- main output file (PDF / HTML / result.txt)
+- outputs.zip containing experiment results
+
+This allows users to quickly view experiment results from their phone without logging into the server.
