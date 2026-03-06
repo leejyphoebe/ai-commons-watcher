@@ -312,31 +312,96 @@ the watcher will not detect it.
 
 ## Email Notifications (Optional)
 
-The watcher can send email notifications when an experiment finishes.
+The watcher can send email notifications when an experiment finishes. This feature allows users to receive experiment results on their phone
+without logging into the server.
+
+### Email Notification Flow
+
+```
+Experiment finishes
+        ↓
+stop.txt detected
+        ↓
+Watcher runs script / notebook
+        ↓
+Outputs generated
+        ↓
+Email notification sent
+```
 
 ### SMTP Setup
 
-Create a `.env` file in the project root with:
+Email notifications require SMTP credentials. These are stored in a `.env` file
+so that sensitive information (such as passwords) is not committed to the repository.
 
+Step 1 — Create the `.env` file
+
+From the project root directory run:
+
+```bash
+cp .env.example .env
+```
+
+Step 2 — Edit the `.env` file
+
+Open the file:
+
+```bash
+nano .env
+```
+
+Fill in the email configuration:
+
+```
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
-SMTP_USER=<email account>
-SMTP_PASS=<app password>
+SMTP_USER=<your email account>
+SMTP_PASS=<your app password>
 EMAIL_FROM=<sender email>
 EMAIL_TO=<default recipient>
+```
 
-EMAIL_TO acts as a fallback if a user email is not configured.
+Example using Gmail:
 
-### Per-user email configuration
+```
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=aicommonswatcher@gmail.com
+SMTP_PASS=<gmail app password>
+EMAIL_FROM=aicommonswatcher@gmail.com
+EMAIL_TO=user@email.com
+```
 
-Users can optionally specify their email in the watcher configuration:
+`EMAIL_TO` is used as a fallback if a user email is not configured in the watcher configuration.
 
-users:
-  - id: "phoebe"
-    input_subdir: "phoebe"
-    email: "phoebe@email.com"
+### Per-user Email Configuration
 
-If this field is present, experiment results will be sent to that email address.
+Each user can optionally configure their email address in the watcher
+configuration file.
+
+Edit:
+
+```
+config/config.docker.yaml
+```
+
+Example:
+
+```yaml
+report_watchers:
+  root_input_dir: "/sync"
+  poll_seconds: 10
+
+  users:
+    - id: "phoebe"
+      input_subdir: "phoebe"
+      email: "phoebe@email.com"
+```
+
+If the `email` field is present, experiment results will be sent to that address.
+
+If the field is not provided, the watcher will send the notification to
+the default email defined by `EMAIL_TO` in the `.env` file.
 
 ### Email Contents
 
