@@ -258,8 +258,8 @@ def attach_file(msg: EmailMessage, file_path: Path):
 def send_experiment_email(exp_dir: Path, user_cfg: dict):
     """
     Send a completion email for one experiment.
-    Uses EMAIL_TO from env, or user_cfg['email'] if provided later.
-    Attaches main report if present, plus outputs.zip.
+    Uses EMAIL_TO from the environment.
+    Attaches the main report if present, plus outputs.zip.
     """
     host = os.environ.get("SMTP_HOST")
     port = int(os.environ.get("SMTP_PORT", "587"))
@@ -267,10 +267,14 @@ def send_experiment_email(exp_dir: Path, user_cfg: dict):
     smtp_pass = os.environ.get("SMTP_PASS", "").strip()
     email_from = os.environ.get("EMAIL_FROM", smtp_user)
 
-    # Future-friendly: allow per-user email in YAML later
-    email_to = user_cfg.get("email") or os.environ.get("EMAIL_TO")
+    # Default deployment: one watcher instance per user, using EMAIL_TO from .env
+    email_to = os.environ.get("EMAIL_TO")
 
-    if not all([host, smtp_user, smtp_pass, email_from, email_to]):
+    if not email_to:
+        print(f"[Email] Skipping email for {exp_dir}: EMAIL_TO is not set.")
+        return
+
+    if not all([host, smtp_user, smtp_pass, email_from]):
         print(f"[Email] Skipping email for {exp_dir}: SMTP settings incomplete.")
         return
 
@@ -281,13 +285,16 @@ def send_experiment_email(exp_dir: Path, user_cfg: dict):
     msg["From"] = email_from
     msg["To"] = email_to
     msg.set_content(
-        f"""Your experiment has completed.
+    f"""Your experiment has completed.
 
+User: {user_cfg.get("id")}
 Experiment folder: {exp_dir.name}
+
+Results are attached when available.
 
 This email was sent automatically by AI-Commons Watcher.
 """
-    )
+)
 
     # Prefer attaching main report if available
     preferred_files = [
