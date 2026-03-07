@@ -158,7 +158,7 @@ nano .env
 ```
 
 Update the following fields:
-```bash
+```env
 PUID=1000
 PGID=1000
 EMAIL_TO=your_email@example.com
