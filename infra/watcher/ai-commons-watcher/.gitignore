@@ -5,3 +5,4 @@ __pycache__/
 .env
 sync/
 config/config.docker.yaml
+stop.txt
