@@ -187,9 +187,15 @@ mkdir -p ./sync/<username>
 
 2. In the Host Server Syncthing GUI, add a folder:
 - Folder Label: <username>
-- Folder Path: sync/<username>
+- Folder Path: /var/syncthing/data/<username>
 - Folder Type: Send & Receive
 - Share with: NSCC device
+
+Important:
+- The path `/var/syncthing/data` is the data directory inside the Syncthing Docker container.
+- It maps to the host directory: ./sync/<username>
+- Do NOT use `/sync` as the folder path.
+- `/sync` is used internally by the watcher container and is not visible to Syncthing.
 
 3. On NSCC:
 - Accept the incoming folder share
