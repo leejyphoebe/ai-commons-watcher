@@ -7,7 +7,8 @@ services:
       - PUID=${PUID}
       - PGID=${PGID}
     volumes:
-      - ./sync:/var/syncthing
+      - ./sync:/var/syncthing/data
+      - ./syncthing-config:/var/syncthing/config
     ports:
       - "28384:8384"
       - "22200:22000/tcp"
