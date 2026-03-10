@@ -10,6 +10,30 @@ The watcher:
 - Generates HTML (and optional PDF) reports
 - Removes `stop.txt` to prevent re-processing
 
+## Current Working Pipeline
+
+The verified working flow is:
+```
+NSCC experiment folder
+        ↓
+Syncthing sync
+        ↓
+Host machine sync/<username>/<experiment_name>
+        ↓
+Watcher container detects stop.txt
+        ↓
+runs run.py or analysis.ipynb
+        ↓
+generates outputs
+        ↓
+sends email notification
+        ↓
+removes stop.txt
+```
+
+This pipeline has been tested end-to-end using NSCC, Syncthing, Docker, and the AI-Commons Watcher.
+
+
 ## Setup Overview
 
 This project requires two one-time setups, which **must be completed in order**:
@@ -39,6 +63,21 @@ If you are syncing experiments from **NSCC**, you must complete the NSCC setup *
 
 **Follow this guide carefully:**  
 [NSCC Syncthing Setup Guide](docs/nscc-syncthing-setup.md)
+
+### Important: Correct NSCC Experiment Folder
+
+Experiments must be created inside the accepted Syncthing shared folder:
+```bash
+~/sync/<username>/<experiment_name>
+```
+Example:
+```bash
+~/sync/phoe0012/demo_exp_01
+```
+Do **NOT** create experiments directly under:
+```bash
+~/sync/demo_exp_01
+```
 
 This guide covers:
 - Installing Syncthing without sudo
@@ -75,6 +114,23 @@ Inside Docker, `./sync` is mounted as `/sync`, so the watcher reads:
 
 On the host machine, check your SYNC_DIR folder instead
 (e.g. `~/ai-commons-sync`).
+
+### Syncthing Volume Layout
+
+Syncthing runs inside Docker and uses two separate mounts:
+```bash
+./sync → /var/syncthing/data
+./syncthing-config → /var/syncthing/config
+```
+
+Purpose:
+
+| Host Folder | Purpose |
+|-------------|---------|
+| `sync/` | Synced experiment folders |
+| `syncthing-config/` | Syncthing device and folder configuration |
+
+Separating data and configuration ensures that Syncthing settings are **not lost when Docker containers restart**.
 
 ---
 
