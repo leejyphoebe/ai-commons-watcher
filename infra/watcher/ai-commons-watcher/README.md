@@ -235,16 +235,22 @@ PGID = your Linux group ID
 
 EMAIL_TO = the email address that should receive experiment notifications
 
-#### Important
+### Important
 
-The email sender account is already preconfigured for the watcher deployment.
+This project uses a **shared sender email account** for experiment notifications.
 
-You do not need to configure:
-- your own SMTP host
-- your own SMTP username
-- your own SMTP password
-- your own app password
+Each user runs the watcher on their **own host server**, so the shared SMTP
+credentials must be added to that server's local `.env` file.
 
+You will need to obtain the password from the project maintainer:
+
+- SMTP_PASS
+
+Users only need to set their own recipient email address:
+
+EMAIL_TO=your_email@example.com
+
+Do not commit real SMTP credentials into Git.
 
 ### 4.3 Configure watcher
 
