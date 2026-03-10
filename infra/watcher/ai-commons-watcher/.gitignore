@@ -6,3 +6,7 @@ __pycache__/
 sync/
 config/config.docker.yaml
 stop.txt
+sync/
+syncthing-config/
+syncthing-config-backup/
+*.tar.gz
