@@ -9,7 +9,11 @@ AI-Commons provides an automated setup script that installs and starts Syncthing
 Run this on **NSCC**:
 
 ```bash
-bash scripts/setup_nscc_syncthing.sh
+wget -O setup_nscc_syncthing.sh \
+https://raw.githubusercontent.com/leejyphoebe/ai-commons-watcher/main/infra/watcher/ai-commons-watcher/scripts/setup_nscc_syncthing.sh
+
+chmod +x setup_nscc_syncthing.sh
+bash setup_nscc_syncthing.sh
 ```
 
 The script will automatically:
