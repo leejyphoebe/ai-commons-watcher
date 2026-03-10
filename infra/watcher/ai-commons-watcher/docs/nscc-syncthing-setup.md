@@ -2,6 +2,42 @@
 
 This guide explains how to set up **Syncthing on NSCC** to sync experiment data to the host server.
 
+## Quick Setup (Recommended)
+
+AI-Commons provides an automated setup script that installs and starts Syncthing for you.
+
+Run this on **NSCC**:
+
+```bash
+bash scripts/setup_nscc_syncthing.sh
+```
+
+The script will automatically:
+
+- install Syncthing (no sudo required)
+- start Syncthing inside a persistent `tmux` session
+- create the experiment sync folder
+- print the remaining setup steps
+
+After running the script:
+
+1. Create the SSH tunnel:
+
+```bash
+ssh -N -L 8384:127.0.0.1:8384 <nscc_username>@aspire2antu.nscc.sg
+```
+
+2. Open the Syncthing GUI:
+
+```
+http://127.0.0.1:8384
+```
+
+3. Copy the **NSCC Device ID**  
+4. Add it on the **Host Server Syncthing GUI**
+
+You can skip the manual installation steps below if the script works correctly.
+
 ## 1. Prerequisites
 
 This guide assumes the **Host Server has already been set up**.
