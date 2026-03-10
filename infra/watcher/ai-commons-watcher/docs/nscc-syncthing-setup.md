@@ -19,24 +19,18 @@ The script will automatically:
 - create the experiment sync folder
 - print the remaining setup steps
 
-After running the script:
+After running the script, complete the remaining steps below.
 
-1. Create the SSH tunnel:
+**Next Steps**
 
-```bash
-ssh -N -L 8384:127.0.0.1:8384 <nscc_username>@aspire2antu.nscc.sg
-```
+1. Access the Syncthing Web GUI via SSH tunnel  
+   → Follow Section 5: Access Syncthing Web GUI
+2. Pair the NSCC device with the Host Server  
+   → Follow Section 6: Device Pairing
+3. Accept the shared experiment folder from the Host Server  
+   → Follow Section 7: Folder Sharing
 
-2. Open the Syncthing GUI:
-
-```
-http://127.0.0.1:8384
-```
-
-3. Copy the **NSCC Device ID**  
-4. Add it on the **Host Server Syncthing GUI**
-
-You can skip the manual installation steps below if the script works correctly.
+You can skip the manual Syncthing installation steps if the setup script completes successfully.
 
 ## 1. Prerequisites
 
