@@ -33,6 +33,14 @@ removes stop.txt
 
 This pipeline has been tested end-to-end using NSCC, Syncthing, Docker, and the AI-Commons Watcher.
 
+## Repository Guide
+
+- `watcher/` — core watcher implementation
+- `config/` — configuration template for watcher setup
+- `docs/` — supporting setup documentation
+- `examples/sample_experiment/` — minimal example experiment for testing the workflow
+- `scripts/` — helper scripts for NSCC and Syncthing setup
+
 
 ## Setup Overview
 
