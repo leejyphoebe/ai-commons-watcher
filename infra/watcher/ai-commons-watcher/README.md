@@ -264,13 +264,19 @@ nano config/config.docker.yaml
 Update the following fields:
 - id → your NTU username
 - input_subdir → your NTU username (must match your Syncthing folder name)
-- base_path → path to your synced experiment directory (e.g. /sync inside Docker)
+
+These values should match the folder being monitored under /sync/<your_username>/.
+
+The remaining fields can be kept at their default values unless you want to customise the watcher behaviour. In particular, root_input_dir should remain as /sync unless you changed the Docker mount path.
 
 Example:
-```bash
+```yaml
 users:
   - id: "your_username"
     input_subdir: "your_username"
+    experiment_pattern: "*"
+    stop_file: "stop.txt"
+    runner: "auto"
 ```
 The watcher uses this configuration file to determine which user folders to monitor and when to trigger experiment processing.
 
@@ -443,7 +449,7 @@ cp .env.example .env
 nano .env
 ```
 Then update:
-```bash
+```yaml
 EMAIL_TO=your_email@example.com
 ```
 You do not need to configure your own SMTP account or app password.
