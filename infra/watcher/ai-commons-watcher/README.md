@@ -254,10 +254,25 @@ Do not commit real SMTP credentials into Git.
 
 ### 4.3 Configure watcher
 
+Copy the configuration template and customise it for your environment:
+
 ```bash
 cp config/config.template.yaml config/config.docker.yaml
-# edit id and input_subdir to your NTU username
+nano config/config.docker.yaml
 ```
+
+Update the following fields:
+- id → your NTU username
+- input_subdir → your NTU username (must match your Syncthing folder name)
+- base_path → path to your synced experiment directory (e.g. /sync inside Docker)
+
+Example:
+```bash
+users:
+  - id: "your_username"
+    input_subdir: "your_username"
+```
+The watcher uses this configuration file to determine which user folders to monitor and when to trigger experiment processing.
 
 ### 4.4 Start Syncthing + Watcher
 
