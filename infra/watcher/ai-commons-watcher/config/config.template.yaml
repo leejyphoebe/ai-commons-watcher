@@ -4,7 +4,7 @@ report_watchers:
 
   users:
     - id: "YOUR_NTU_USERNAME"
-      input_subdir: "YOUR_NTU_USERNAME"          # watches /sync/phoebe
+      input_subdir: "YOUR_NTU_USERNAME"          # watches /sync/<your_username>
       experiment_pattern: "*"
       stop_file: "stop.txt"
       runner: "auto"
