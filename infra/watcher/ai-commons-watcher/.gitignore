@@ -10,3 +10,4 @@ sync/
 syncthing-config/
 syncthing-config-backup/
 *.tar.gz
+config.local.yaml
