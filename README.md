@@ -51,7 +51,7 @@ Key components:
 
 ### Quick Links
 
-- [Watcher Service](infra/watcher/ai-commons-watcher/watcher.py)
+- [Watcher Service](infra/watcher/ai-commons-watcher/watcher/watcher.py)
 - [Configuration](infra/watcher/ai-commons-watcher/config/)
 - [NSCC Setup Guide](infra/watcher/ai-commons-watcher/docs/nscc-syncthing-setup.md)
 
