@@ -70,7 +70,7 @@ All Syncthing connections are initiated from the Host Server.
 If you are syncing experiments from **NSCC**, you must complete the NSCC setup **once**.
 
 **Follow this guide carefully:**  
-[NSCC Syncthing Setup Guide](https://github.com/<your-username>/<your-repo>/blob/main/docs/nscc-syncthing-setup.md)
+[NSCC Syncthing Setup Guide](https://github.com/leejyphoebe/ai-commons-watcher/blob/main/infra/watcher/ai-commons-watcher/docs/nscc-syncthing-setup.md)
 
 ### Important: Correct NSCC Experiment Folder
 
