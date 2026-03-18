@@ -35,12 +35,25 @@ This pipeline has been tested end-to-end using NSCC, Syncthing, Docker, and the 
 
 ## Repository Guide
 
-- `watcher/` — core watcher implementation
-- `config/` — configuration template for watcher setup
-- `docs/` — supporting setup documentation
-- `examples/sample_experiment/` — minimal example experiment for testing the workflow
-- `scripts/` — helper scripts for NSCC and Syncthing setup
+This repository follows the internal structure of the AI-Commons project.
 
+The core Watcher implementation is located under:
+
+- `infra/watcher/ai-commons-watcher/`
+
+Key components:
+
+- `infra/watcher/ai-commons-watcher/watcher.py` — core watcher implementation  
+- `infra/watcher/ai-commons-watcher/config/` — configuration templates  
+- `infra/watcher/ai-commons-watcher/docs/` — setup and usage documentation  
+- `infra/watcher/ai-commons-watcher/examples/` — sample experiment  
+- `infra/watcher/ai-commons-watcher/scripts/` — helper setup scripts  
+
+### Quick Links
+
+- [Watcher Service](infra/watcher/ai-commons-watcher/watcher.py)
+- [Configuration](infra/watcher/ai-commons-watcher/config/)
+- [NSCC Setup Guide](infra/watcher/ai-commons-watcher/docs/nscc-syncthing-setup.md)
 
 ## Setup Overview
 
