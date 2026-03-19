@@ -13,7 +13,7 @@ The watcher:
 
 ## Note for Examiners
 
-This repository contains the standalone public version of the AI-Commons Watcher used for the Final Year Project demonstration. It has been simplified from the internal AI-Commons repository structure so that the core components, configuration files, setup guide, and sample experiment are easier to navigate.
+This repository contains the standalone public version of the AI-Commons Watcher prepared for Final Year Project evaluation. It has been simplified from the internal AI-Commons infrastructure repository to improve clarity and navigability, while preserving the core functionality and architecture.
 
 ## Verified Workflow
 
@@ -40,22 +40,10 @@ This pipeline has been tested end-to-end using NSCC, Syncthing, Docker, and the 
 
 ## Repository Guide
 
-This repository follows the internal structure of the AI-Commons project.
-
-The core Watcher implementation is located under:
-
-- `infra/watcher/ai-commons-watcher/`
-
-## Repository Guide
-
-This repository contains a public, standalone version of the AI-Commons Watcher prepared for demonstration and evaluation.
-
-Key components:
-
 - `watcher/` — core watcher implementation
 - `config/` — configuration templates
 - `docs/` — setup and usage documentation
-- `examples/` — sample experiment
+- `examples/` — sample experiment input
 - `scripts/` — helper setup scripts
 
 ### Quick Links
@@ -80,7 +68,7 @@ Due to NSCC firewall restrictions, all Syncthing device connections must be init
 
 ### 2. NSCC (User Side) — *After Host Setup*
 Runs Syncthing as a user-level process to sync experiment folders to the CPU server.
-This setup is performed **once per user**.
+This setup only needs to be performed **once per user**.
 
 - NSCC does **not** accept inbound connections
 - NSCC only accepts device and folder requests from the Host Server
@@ -133,13 +121,13 @@ The intended workflow is:
 /path/to/ai-commons-watcher/
   sync/
     <your_username>/
-      <any_experiment_folder_name>/
+      <experiment_name>/
         run.py OR analysis.ipynb
         stop.txt
 
 Inside Docker, ./sync is mounted as /sync, so the watcher reads:
 
-/sync/<your_username>/<any_experiment_folder_name>/
+/sync/<your_username>/<experiment_name>/
 ```
 
 On the host machine, check your SYNC_DIR folder instead
