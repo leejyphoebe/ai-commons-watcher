@@ -7,10 +7,15 @@ The watcher:
 - Monitors a Syncthing folder (mounted as `/sync` in Docker)
 - Detects experiment folders containing `stop.txt`
 - Executes either a Python script (`run.py`) or notebook (`analysis.ipynb`)
-- Generates HTML (and optional PDF) reports
-- Removes `stop.txt` to prevent re-processing
+- Generates HTML reports and optional PDF output
+- Sends email notifications with generated results
+- Removes completion signal `stop.txt` to prevent re-processing
 
-## Current Working Pipeline
+## Note for Examiners
+
+This repository contains the standalone public version of the AI-Commons Watcher used for the Final Year Project demonstration. It has been simplified from the internal AI-Commons repository structure so that the core components, configuration files, setup guide, and sample experiment are easier to navigate.
+
+## Verified Workflow
 
 The verified working flow is:
 ```
@@ -41,19 +46,23 @@ The core Watcher implementation is located under:
 
 - `infra/watcher/ai-commons-watcher/`
 
+## Repository Guide
+
+This repository contains a public, standalone version of the AI-Commons Watcher prepared for demonstration and evaluation.
+
 Key components:
 
-- `infra/watcher/ai-commons-watcher/watcher.py` — core watcher implementation  
-- `infra/watcher/ai-commons-watcher/config/` — configuration templates  
-- `infra/watcher/ai-commons-watcher/docs/` — setup and usage documentation  
-- `infra/watcher/ai-commons-watcher/examples/` — sample experiment  
-- `infra/watcher/ai-commons-watcher/scripts/` — helper setup scripts  
+- `watcher/` — core watcher implementation
+- `config/` — configuration templates
+- `docs/` — setup and usage documentation
+- `examples/` — sample experiment
+- `scripts/` — helper setup scripts
 
 ### Quick Links
 
-- [Watcher Service](infra/watcher/ai-commons-watcher/watcher/watcher.py)
-- [Configuration](infra/watcher/ai-commons-watcher/config/)
-- [NSCC Setup Guide](infra/watcher/ai-commons-watcher/docs/nscc-syncthing-setup.md)
+- [Watcher Service](watcher/watcher.py)
+- [Configuration](config/)
+- [NSCC Setup Guide](docs/nscc-syncthing-setup.md)
 
 ## Setup Overview
 
@@ -80,7 +89,7 @@ This setup is performed **once per user**.
 Do not attempt to add the Host Server as a remote device from the NSCC Syncthing GUI.  
 All Syncthing connections are initiated from the Host Server.
 
-If you are syncing experiments from **NSCC**, you must complete the NSCC setup **once**.
+If you plan to sync experiments from **NSCC**, this setup only needs to be completed **once** per user.
 
 **Follow this guide carefully:**  
 [NSCC Syncthing Setup Guide](docs/nscc-syncthing-setup.md)
@@ -128,7 +137,7 @@ The intended workflow is:
         run.py OR analysis.ipynb
         stop.txt
 
-Inside Docker, `./sync` is mounted as `/sync`, so the watcher reads:
+Inside Docker, ./sync is mounted as /sync, so the watcher reads:
 
 /sync/<your_username>/<any_experiment_folder_name>/
 ```
