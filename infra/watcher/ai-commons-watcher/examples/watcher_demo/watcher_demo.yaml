@@ -1,0 +1,30 @@
+config_dir: "$HOME/.ai-commons"
+node_state_file_path: "$HOME/.ai-commons/node_state.yaml"
+
+ssh:
+  hostname: "127.0.0.1"
+  port: 2222
+  config_path: "$HOME/.ai-commons/ssh_config"
+
+experiments:
+  - name: "watcher_demo"
+    git_required: false
+    local_config_dir: "/home/phoebe/projects/ai-commons/infra/watcher/ai-commons-watcher/examples/watcher_demo"
+    remote_config_dir: "/scratch/users/ntu/phoe0012/.ai-commons/demo_config"
+
+    # IMPORTANT: this MUST be the NSCC folder that Syncthing is sharing to your host.
+    # We'll set it after you confirm your NSCC sync path.
+    cmd_dir: "/home/users/ntu/phoe0012/sync/phoebe/demo_exp"
+
+    setup:
+      setup_files_dir: "/scratch/users/ntu/phoe0012/.ai-commons/setup"
+      setup_script_local_path: "/home/phoebe/projects/ai-commons/infra/watcher/ai-commons-watcher/examples/watcher_demo/run_demo.sh"
+      setup_script_remote_path: "run_demo.sh"
+      setup_files: []
+
+    nodes:
+      - host: "phoe0012"
+        experiment_config_paths:
+          - src: "run_demo.sh"
+            dest: "run_demo.sh"
+            command: "bash -eu /scratch/users/ntu/phoe0012/.ai-commons/setup/run_demo.sh"
